@@ -149,28 +149,3 @@ def cari_harga_lensa_luar(df_luar, nama_lensa, sph, cyl, add):
 
     return None  # Tidak ditemukan
 
-def cari_harga_lensa(df_lensa, nama_lensa, sph, cyl, add):
-    """
-    Cari harga dari sheet lensa stock (MLensa) berdasarkan nama lensa dan ukuran.
-
-    Prioritas pencocokan: nama_lensa, sph, cyl, add (jika ada).
-    """
-    df = df_lensa.copy()
-    df.columns = df.columns.str.lower().str.replace(" ", "_")
-
-    # Filter berdasarkan nama lensa dulu
-    df = df[df['nama_lensa'].str.lower() == nama_lensa.lower()]
-
-    # Filter SPH dan CYL
-    df = df[(df['sph'] == sph) & (df['cyl'] == cyl)]
-
-    # Jika ada kolom add, cocokkan juga
-    if 'add' in df.columns and add:
-        df = df[df['add'] == add]
-
-    if not df.empty:
-        try:
-            return int(float(df.iloc[0]['harga']))
-        except:
-            return None
-    return None
