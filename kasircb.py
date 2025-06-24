@@ -46,10 +46,21 @@ def run():
     st.subheader("➕ Tambah Item")
     status_frame = st.selectbox("Status Frame", ["Stock", "Punya Sendiri"])
     if status_frame == "Stock":
-        merk_frame = st.selectbox("Merk Frame", sorted(df_frame['Merk'].dropna().unique()))
-        kode_frame = st.selectbox("Kode Frame", sorted(df_frame[df_frame['Merk'] == merk_frame]['Kode'].dropna().unique()))
+        merk_options = [""] + sorted(df_frame['Merk'].dropna().unique())
+        merk_frame = st.selectbox("Merk Frame", merk_options, format_func=lambda x: "-- Pilih Merk --" if x == "" else x)
+        if merk_frame:
+            kode_options = [""] + sorted(df_frame[df_frame['Merk'] == merk_frame]['Kode'].dropna().unique())
+        else:
+            kode_options = [""]            
+        kode_frame = st.selectbox("Kode Frame", kode_options, format_func=lambda x: "-- Pilih Kode --" if x == "" else x)
+
+        if not merk_frame or not kode_frame:
+            st.warning("Merk dan Kode Frame harus dipilih.")
+            st.stop()
     else:
         merk_frame, kode_frame = "", ""
+        
+
 
     status_lensa = st.selectbox("Status Lensa", ["Stock", "Inti", "Pesan", "Overlens"])
     jenis_lensa = st.selectbox("Jenis Lensa", sorted(df_lensa['Jenis'].dropna().unique()))
