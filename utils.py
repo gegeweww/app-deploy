@@ -117,6 +117,7 @@ def generate_id_pembayaran(sheet_key, json_path, sheet_name, tanggal_pembayaran)
     return id_pembayaran
 
 def cari_harga_lensa_luar(df_luar, nama_lensa, sph, cyl, add):
+    df_luar.columns = df_luar.columns.str.lower().str.strip().str.replace(" ", "_")
     try:
         sph = float(sph)
         cyl = float(cyl) if cyl not in ["", "-"] else None
@@ -128,22 +129,37 @@ def cari_harga_lensa_luar(df_luar, nama_lensa, sph, cyl, add):
 
     for _, row in df_cocok.iterrows():
         try:
+            # Konversi string koma jadi float, "-" jadi None
+            def parse(x):
+                if x == "-":
+                    return None
+                return float(str(x).replace(",", "."))
+                        
             # Ambil rentang
-            sph_min, sph_max = row['sph_min'], row['sph_max']
-            cyl_min, cyl_max = row['cyl_min'], row['cyl_max']
-            add_min, add_max = row['add_min'], row['add_max']
+            sph_min = parse(row['sph_min'])
+            sph_max = parse(row['sph_max'])            
+            cyl_min = parse(row['cyl_min'])
+            cyl_max = parse(row['cyl_max'])
+            add_min = parse(row['add_min'])
+            add_max = parse(row['add_max'])
 
             # Validasi SPH
-            if sph_min != "-" and sph_max != "-" and not (sph_min <= sph <= sph_max):
+            if sph_min is not None and sph_max is not None and not (sph_min <= sph <= sph_max):
                 continue
             # Validasi CYL
-            if cyl_min != "-" and cyl_max != "-" and cyl is not None and not (cyl_min <= cyl <= cyl_max):
+            if cyl_min is not None and cyl_max is not None and cyl is not None and not (cyl_min <= cyl <= cyl_max):
                 continue
             # Validasi ADD
-            if add_min != "-" and add_max != "-" and add is not None and not (add_min <= add <= add_max):
+            if add_min is not None and add_max is not None and add is not None and not (add_min <= add <= add_max):
                 continue
-
-            return int(row['harga'])  # Cocok ketemu
+        
+            harga_str = str(row['harga'])\
+                .replace("Rp", "")\
+                .replace(".", "")\
+                .replace(",", "")\
+                .strip()
+            return int(harga_str)
+        
         except:
             continue
 
