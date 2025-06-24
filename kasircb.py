@@ -3,7 +3,8 @@ import pandas as pd
 from datetime import datetime, date
 from utils import (
     get_dataframe, append_row,
-    get_or_create_pelanggan_id, generate_id_transaksi, generate_id_pembayaran
+    get_or_create_pelanggan_id, generate_id_transaksi, generate_id_pembayaran,
+    cari_harga_lensa_luar
 )
 from constants import SHEET_KEY, JSON_PATH, SHEET_NAMES
 def run():
@@ -60,25 +61,84 @@ def run():
     else:
         merk_frame, kode_frame = "", ""
         
-
-
     status_lensa = st.selectbox("Status Lensa", ["Stock", "Inti", "Pesan", "Overlens"])
-    jenis_lensa = st.selectbox("Jenis Lensa", sorted(df_lensa['Jenis'].dropna().unique()))
-    tipe_lensa = st.selectbox("Tipe Lensa", sorted(df_lensa[df_lensa['Jenis'] == jenis_lensa]['Tipe'].dropna().unique()))
-    merk_lensa = st.selectbox("Merk Lensa", sorted(df_lensa[df_lensa['Jenis'] == jenis_lensa]['Merk'].dropna().unique()))
+    if status_lensa == "Stock":
+        sheet_lensa = SHEET_NAMES["dlensa"]
+        df_lensa = get_dataframe(SHEET_KEY, JSON_PATH, sheet_lensa)
+        df_lensa.columns = df_lensa.columns.str.lower().str.strip()
+    else:
+        sheet_lensa = SHEET_NAMES["lensa_luar_stock"]
+        df_lensa_all = get_dataframe(SHEET_KEY, JSON_PATH, sheet_lensa)
+        df_lensa_all.columns = df_lensa_all.columns.str.lower().str.strip()
+        df_lensa = df_lensa_all[df_lensa_all['status'].str.lower() == status_lensa.lower()]
+    
+   
+    jenis_lensa = st.selectbox("Jenis Lensa", sorted(df_lensa['jenis'].dropna().unique()))
+    tipe_lensa = st.selectbox("Tipe Lensa", sorted(df_lensa[df_lensa['jenis'] == jenis_lensa]['tipe'].dropna().unique()))
+    merk_lensa = st.selectbox("Merk Lensa", sorted(df_lensa[df_lensa['jenis'] == jenis_lensa]['merk'].dropna().unique()))
 
-    st.markdown("**Ukuran Lensa**")
-    colR, colL = st.columns(2)
-    with colR:
-        sph_r = st.selectbox("SPH R", sorted(df_lensa['SPH'].dropna().unique()))
-        cyl_r = st.selectbox("CYL R", sorted(df_lensa['CYL'].dropna().unique()))
-        axis_r = st.selectbox("Axis R", list(range(0, 181))) if cyl_r != "0.00" else ""
-        add_r = st.selectbox("Add R", sorted(df_lensa['Add'].dropna().unique())) if tipe_lensa in ["Progressive", "Kryptok", "Flattop"] else ""
-    with colL:
-        sph_l = st.selectbox("SPH L", sorted(df_lensa['SPH'].dropna().unique()))
-        cyl_l = st.selectbox("CYL L", sorted(df_lensa['CYL'].dropna().unique()))
-        axis_l = st.selectbox("Axis L", list(range(0, 181))) if cyl_l != "0.00" else ""
-        add_l = st.selectbox("Add L", sorted(df_lensa['Add'].dropna().unique())) if tipe_lensa in ["Progressive", "Kryptok", "Flattop"] else ""
+    # Nama Lensa hanya untuk non-stock
+    nama_lensa = ""
+    if status_lensa == "Stock":
+        st.markdown("**Ukuran Lensa**")
+        colR, colL = st.columns(2)
+        with colR:
+            sph_r = st.selectbox("SPH R", sorted(df_lensa['sph'].dropna().unique()))
+            cyl_r = st.selectbox("CYL R", sorted(df_lensa['cyl'].dropna().unique()))
+            axis_r = st.selectbox("Axis R", list(range(0, 181))) if cyl_r != "0.00" else ""
+            add_r = st.selectbox("Add R", sorted(df_lensa['add'].dropna().unique())) if tipe_lensa in ["Progressive", "Kryptok", "Flattop"] else ""
+        with colL:
+            sph_l = st.selectbox("SPH L", sorted(df_lensa['sph'].dropna().unique()))
+            cyl_l = st.selectbox("CYL L", sorted(df_lensa['cyl'].dropna().unique()))
+            axis_l = st.selectbox("Axis L", list(range(0, 181))) if cyl_l != "0.00" else ""
+            add_l = st.selectbox("Add L", sorted(df_lensa['add'].dropna().unique())) if tipe_lensa in ["Progressive", "Kryptok", "Flattop"] else ""
+    
+    else:
+        nama_lensa = st.selectbox("Nama Lensa", sorted(df_lensa[
+            (df_lensa['jenis'] == jenis_lensa) & 
+            (df_lensa['tipe'] == tipe_lensa) & 
+            (df_lensa['merk'] == merk_lensa)
+        ]['nama lensa'].dropna().unique()))
+                
+        st.markdown("**Ukuran Lensa**")
+        colR, colL = st.columns(2)
+        sph_range = [f"{x:.2f}" for x in [i * 0.25 for i in range(-40, 41)]]
+        cyl_range = [f"{x:.2f}" for x in [i * 0.25 for i in range(-20, 1)]]
+        add_range = [f"{x:.2f}" for x in [i * 0.25 for i in range(0, 13)]]
+
+        with colR:
+            sph_r = st.selectbox("SPH R", sph_range)
+            cyl_r = st.selectbox("CYL R", cyl_range)
+            axis_r = st.selectbox("Axis R", list(range(0, 181))) if cyl_r != "0.00" else ""
+            add_r = st.selectbox("Add R", add_range) if tipe_lensa.lower() in ["progressive", "kryptok", "flattop"] else ""
+
+        with colL:
+            sph_l = st.selectbox("SPH L", sph_range)
+            cyl_l = st.selectbox("CYL L", cyl_range)
+            axis_l = st.selectbox("Axis L", list(range(0, 181))) if cyl_l != "0.00" else ""
+            add_l = st.selectbox("Add L", add_range) if tipe_lensa.lower() in ["progressive", "kryptok", "flattop"] else ""
+
+
+    # Konversi nilai add (pakai add_r, diasumsikan sama untuk L dan R)
+    add_dipakai = add_r if tipe_lensa.lower() in ["progressive", "kryptok", "flattop"] else ""
+
+    if status_lensa == "Stock":
+        harga_lensa = df_lensa[
+            (df_lensa['jenis'] == jenis_lensa) & (df_lensa['merk'] == merk_lensa)
+        ]['harga jual']\
+            .astype(str)\
+            .str.replace('Rp', '', regex=False)\
+            .str.replace('.', '', regex=False)\
+            .str.replace(',', '', regex=False)\
+            .str.strip()\
+            .astype(int)\
+            .values[0]
+
+    else:
+        harga_lensa = cari_harga_lensa_luar(df_lensa, nama_lensa.strip().lower(), sph_r, cyl_r, add_dipakai)
+        if harga_lensa is None:
+            st.warning("⚠️ Ukuran tidak sesuai rentang harga manapun!")
+            st.stop()
 
     st.markdown("**Pilih Diskon**")
     diskon_mode = st.radio("Jenis Diskon", ["Diskon Persen", "Diskon Lensa"])
@@ -95,12 +155,6 @@ def run():
             harga_frame = df_frame[(df_frame['Merk'] == merk_frame) & (df_frame['Kode'] == kode_frame)]['Harga Jual'].values[0]
         else:
             harga_frame = 0
-
-        try:
-            harga_lensa = df_lensa[(df_lensa['Jenis'] == jenis_lensa) & (df_lensa['Merk'] == merk_lensa)]['Harga Jual'].values[0]
-            harga_lensa = 0 if status_lensa == "Overlens" else int(harga_lensa)
-        except:
-            harga_lensa = 0
 
         if diskon_mode == "Diskon Persen":
             diskon_nilai = (harga_frame + harga_lensa) * (diskon_persen / 100)
