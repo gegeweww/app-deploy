@@ -153,12 +153,23 @@ def cari_harga_lensa_luar(df_luar, nama_lensa, sph, cyl, add):
             if add_min is not None and add_max is not None and add is not None and not (add_min <= add <= add_max):
                 continue
         
-            harga_str = str(row['harga'])\
-                .replace("Rp", "")\
-                .replace(".", "")\
-                .replace(",", "")\
-                .strip()
-            return int(harga_str)
+            # Tangani harga yang bisa pakai titik atau koma
+            harga_str = str(row['harga']).strip().lower()
+
+            # Hilangkan 'rp' kalau ada
+            if "rp" in harga_str:
+                harga_str = harga_str.replace("rp", "")
+
+            # Ganti titik (.) hanya jika titik sebagai pemisah ribuan
+            # Contoh: 850.000 → 850000
+            # Tapi jangan kalau 850.500,00 → malah jadi 85050000
+            harga_str = harga_str.replace(".", "").replace(",", "")
+
+            try:
+                return int(harga_str)
+            except:
+                return None
+
         
         except:
             continue
