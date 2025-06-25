@@ -79,16 +79,21 @@ def run():
     # Nama Lensa hanya untuk non-stock
     nama_lensa = ""
     if status_lensa == "Stock":
-        st.markdown("**Ukuran Lensa**")
+        st.markdown("**Ukuran Lensa**")     
         colR, colL = st.columns(2)
+        # List Ukuran
+        sph_list = sorted(df_lensa['sph'].dropna().unique())
+        cyl_list = sorted(df_lensa['cyl'].dropna().unique())
+        add_list = sorted(df_lensa['add'].dropna().unique())
+        
         with colR:
-            sph_r = st.selectbox("SPH R", sorted(df_lensa['sph'].dropna().unique()))
-            cyl_r = st.selectbox("CYL R", sorted(df_lensa['cyl'].dropna().unique()))
+            sph_r = st.selectbox("SPH R", sph_list, index = sph_list.index("0.00"))
+            cyl_r = st.selectbox("CYL R", cyl_list, index = cyl_list.index("0.00"))
             axis_r = st.selectbox("Axis R", list(range(0, 181))) if cyl_r != "0.00" else ""
             add_r = st.selectbox("Add R", sorted(df_lensa['add'].dropna().unique())) if tipe_lensa in ["Progressive", "Kryptok", "Flattop"] else ""
         with colL:
-            sph_l = st.selectbox("SPH L", sorted(df_lensa['sph'].dropna().unique()))
-            cyl_l = st.selectbox("CYL L", sorted(df_lensa['cyl'].dropna().unique()))
+            sph_l = st.selectbox("SPH L", sph_list, index = sph_list.index("0.00"))
+            cyl_l = st.selectbox("CYL L", cyl_list, index = cyl_list.index("0.00"))
             axis_l = st.selectbox("Axis L", list(range(0, 181))) if cyl_l != "0.00" else ""
             add_l = st.selectbox("Add L", sorted(df_lensa['add'].dropna().unique())) if tipe_lensa in ["Progressive", "Kryptok", "Flattop"] else ""
     
@@ -107,14 +112,14 @@ def run():
         add_range = [f"{x:.2f}" for x in [i * 0.25 for i in range(0, 13)]]
 
         with colR:
-            sph_r = st.selectbox("SPH R", sph_range)
-            cyl_r = st.selectbox("CYL R", cyl_range)
+            sph_r = st.selectbox("SPH R", sph_range, index=sph_range.index("0.00"))
+            cyl_r = st.selectbox("CYL R", cyl_range, index=cyl_range.index("0.00"))
             axis_r = st.selectbox("Axis R", list(range(0, 181))) if cyl_r != "0.00" else ""
             add_r = st.selectbox("Add R", add_range) if tipe_lensa.lower() in ["progressive", "kryptok", "flattop"] else ""
 
         with colL:
-            sph_l = st.selectbox("SPH L", sph_range)
-            cyl_l = st.selectbox("CYL L", cyl_range)
+            sph_l = st.selectbox("SPH L", sph_range, index=sph_range.index("0.00"))
+            cyl_l = st.selectbox("CYL L", cyl_range, index=cyl_range.index("0.00"))
             axis_l = st.selectbox("Axis L", list(range(0, 181))) if cyl_l != "0.00" else ""
             add_l = st.selectbox("Add L", add_range) if tipe_lensa.lower() in ["progressive", "kryptok", "flattop"] else ""
 
