@@ -11,9 +11,10 @@ def run():
     @st.cache_data(ttl=300)
     def load_data():
         df_frame = get_dataframe(SHEET_KEY, JSON_PATH, SHEET_NAMES['dframe'])
-        df_lensa = get_dataframe(SHEET_KEY, JSON_PATH, SHEET_NAMES['dlensa'])
+        df_lensa_stock = get_dataframe(SHEET_KEY, JSON_PATH, SHEET_NAMES['dlensa'])
+        df_lensa_luar = get_dataframe(SHEET_KEY, JSON_PATH, SHEET_NAMES['lensa_luar_stock'])
 
-        for df in (df_frame, df_lensa):
+        for df in (df_frame, df_lensa_stock):
             for col in ['Harga Jual', 'Harga Modal']:
                 df[col] = (
                     df[col].astype(str)
@@ -22,9 +23,11 @@ def run():
                     .replace('', '0')
                     .astype(int)
                 )
-        return df_frame, df_lensa
+        df_lensa_luar.columns = df_lensa_luar.columns.str.lower().str.strip().str.replace(" ", "_")
 
-    df_frame, df_lensa = load_data()
+        return df_frame, df_lensa_stock, df_lensa_luar
+
+    df_frame, df_lensa_stock, df_lensa_luar = load_data()
 
     st.title("🧾 Transaksi Kasir")
     today = datetime.today().strftime("%Y-%m-%d")
@@ -63,14 +66,10 @@ def run():
         
     status_lensa = st.selectbox("Status Lensa", ["Stock", "Inti", "Pesan", "Overlens"])
     if status_lensa == "Stock":
-        sheet_lensa = SHEET_NAMES["dlensa"]
-        df_lensa = get_dataframe(SHEET_KEY, JSON_PATH, sheet_lensa)
+        df_lensa = df_lensa_stock.copy()
         df_lensa.columns = df_lensa.columns.str.lower().str.strip()
     else:
-        sheet_lensa = SHEET_NAMES["lensa_luar_stock"]
-        df_lensa_all = get_dataframe(SHEET_KEY, JSON_PATH, sheet_lensa)
-        df_lensa_all.columns = df_lensa_all.columns.str.lower().str.strip()
-        df_lensa = df_lensa_all[df_lensa_all['status'].str.lower() == status_lensa.lower()]
+        df_lensa = df_lensa_luar[df_lensa_luar['status'].str.lower() == status_lensa.lower()].copy()
     
    
     jenis_lensa = st.selectbox("Jenis Lensa", sorted(df_lensa['jenis'].dropna().unique()))
@@ -94,11 +93,12 @@ def run():
             add_l = st.selectbox("Add L", sorted(df_lensa['add'].dropna().unique())) if tipe_lensa in ["Progressive", "Kryptok", "Flattop"] else ""
     
     else:
+        df_lensa.columns = df_lensa.columns.str.lower().str.strip().str.replace(" ", "_")
         nama_lensa = st.selectbox("Nama Lensa", sorted(df_lensa[
             (df_lensa['jenis'] == jenis_lensa) & 
             (df_lensa['tipe'] == tipe_lensa) & 
             (df_lensa['merk'] == merk_lensa)
-        ]['nama lensa'].dropna().unique()))
+        ]['nama_lensa'].dropna().unique()))
                 
         st.markdown("**Ukuran Lensa**")
         colR, colL = st.columns(2)
@@ -150,19 +150,24 @@ def run():
         diskon_persen = 0
         diskon_lensa = st.number_input("Diskon Lensa (Rp)", min_value=0, step=500)
 
+    # Harga Frame
+    if status_frame == "Stock":
+        harga_frame = df_frame[(df_frame['Merk'] == merk_frame) & (df_frame['Kode'] == kode_frame)]['Harga Jual'].values[0]
+    else:
+        harga_frame = 0
+    # Diskon
+    if diskon_mode == "Diskon Persen":
+        diskon_nilai = (harga_frame + harga_lensa) * (diskon_persen / 100)
+    else:
+        diskon_nilai = diskon_lensa
+
+    harga_setelah_diskon = harga_frame + harga_lensa - diskon_nilai
+
+    # Ringkasan Harga
+    st.markdown(f"##### Harga Frame: Rp {harga_frame:,.0f}")
+    st.markdown(f"##### Harga lensa: Rp {harga_lensa:,.0f}")
+
     if st.button("📝 Tambah ke Daftar"):
-        if status_frame == "Stock":
-            harga_frame = df_frame[(df_frame['Merk'] == merk_frame) & (df_frame['Kode'] == kode_frame)]['Harga Jual'].values[0]
-        else:
-            harga_frame = 0
-
-        if diskon_mode == "Diskon Persen":
-            diskon_nilai = (harga_frame + harga_lensa) * (diskon_persen / 100)
-        else:
-            diskon_nilai = diskon_lensa
-
-        harga_setelah_diskon = harga_frame + harga_lensa - diskon_nilai
-
         st.session_state.daftar_item.append({
             "status_frame": status_frame,
             "merk_frame": merk_frame,
@@ -171,6 +176,7 @@ def run():
             "jenis_lensa": jenis_lensa,
             "tipe_lensa": tipe_lensa,
             "merk_lensa": merk_lensa,
+            "nama_lensa": nama_lensa,
             "sph_r": sph_r, "cyl_r": cyl_r, "axis_r": axis_r, "add_r": add_r,
             "sph_l": sph_l, "cyl_l": cyl_l, "axis_l": axis_l, "add_l": add_l,
             "harga_frame": harga_frame,
@@ -201,10 +207,10 @@ def run():
         dasar = (total // 10000) * 10000
         harga_final = dasar + 5000 if ribuan_digit >= 5 else dasar
         pembulatan = harga_final - total
-
-        st.markdown(f"### 💰 Total: Rp {total:,.0f}")
-        st.markdown(f"### Pembulatan: Rp {pembulatan:,.0f}")
-        st.markdown(f"### Total Harga: Rp {harga_final:,.0f}")
+        
+        st.markdown(f"##### Harga: Rp {total:,.0f}")
+        st.markdown(f"##### Pembulatan: Rp {pembulatan:,.0f}")
+        st.markdown(f"#### 💰 Total Harga: Rp {harga_final:,.0f}")
 
         metode = st.selectbox("Jenis Pembayaran", ["Angsuran", "Full"])
         via = st.selectbox("Via Pembayaran", ["Cash", "TF", "Qris"])
