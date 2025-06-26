@@ -107,6 +107,7 @@ def run():
                 
         st.markdown("**Ukuran Lensa**")
         colR, colL = st.columns(2)
+        # Range Ukuran
         sph_range = [f"{x:.2f}" for x in [i * 0.25 for i in range(-40, 41)]]
         cyl_range = [f"{x:.2f}" for x in [i * 0.25 for i in range(-20, 1)]]
         add_range = [f"{x:.2f}" for x in [i * 0.25 for i in range(0, 13)]]
@@ -234,7 +235,7 @@ def run():
             for item in st.session_state.daftar_item:
                 row = [today, tanggal_str, id_transaksi, id_pelanggan, nama,
                     item['status_frame'], item['merk_frame'], item['kode_frame'],
-                    item['status_lensa'], item['jenis_lensa'], item['tipe_lensa'], item['merk_lensa'],
+                    item['status_lensa'], item['jenis_lensa'], item['tipe_lensa'], item['merk_lensa'], item['nama_lensa'],
                     item['sph_r'], item['cyl_r'], item['axis_r'], item['add_r'],
                     item['sph_l'], item['cyl_l'], item['axis_l'], item['add_l'],
                     item['harga_frame'], item['harga_lensa'], int(item['diskon']), int(item['subtotal']), user]
@@ -249,6 +250,8 @@ def run():
                 pembayaran_ke, user
             ]
             append_row(SHEET_KEY, JSON_PATH, SHEET_NAMES['pembayaran'], [str(x) for x in pembayaran_data])
+            
+            st.cache_data.clear()
 
             st.session_state['ringkasan_tersimpan'] = {
                 'id_transaksi': id_transaksi,
