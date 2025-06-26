@@ -1,6 +1,10 @@
 import streamlit as st
 from menu import show_menu
 from constants import USERS
+from utils import set_font
+
+st.set_page_config(page_title="Optik App", layout="wide")
+set_font()
 
 def pilih_user():
     st.title("👤 Pilih User")

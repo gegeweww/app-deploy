@@ -176,3 +176,13 @@ def cari_harga_lensa_luar(df_luar, nama_lensa, sph, cyl, add):
 
     return None  # Tidak ditemukan
 
+def set_font():
+    st.markdown("""
+        <style>
+        @import url('https://fonts.googleapis.com/css2?family=Roboto&display=swap');
+
+        html, body, div, span, input, textarea, select, label, button, p, h1, h2, h3, h4, h5, h6 {
+            font-family: 'Roboto', sans-serif !important;
+        }
+        </style>
+    """, unsafe_allow_html=True)
