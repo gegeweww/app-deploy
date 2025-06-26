@@ -4,6 +4,18 @@ from oauth2client.service_account import ServiceAccountCredentials
 from google.oauth2.service_account import Credentials
 import streamlit as st
 
+# Font
+def set_font():
+    st.markdown("""
+        <style>
+        @import url('https://fonts.googleapis.com/css2?family=Roboto&display=swap');
+
+        html, body, div, span, input, textarea, select, label, button, p, h1, h2, h3, h4, h5, h6 {
+            font-family: 'Roboto', sans-serif !important;
+        }
+        </style>
+    """, unsafe_allow_html=True)
+
 # Autentikasi dan akses Google Sheet
 def get_gsheet_client(json_path):
     scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
@@ -116,8 +128,9 @@ def generate_id_pembayaran(sheet_key, json_path, sheet_name, tanggal_pembayaran)
     id_pembayaran = f"OM/P/{urutan:03d}/{hari_bulanp}/{tahunp}"
     return id_pembayaran
 
-def cari_harga_lensa_luar(df_luar, nama_lensa, sph, cyl, add):
-    df_luar.columns = df_luar.columns.str.lower().str.strip().str.replace(" ", "_")
+def cari_harga_lensa_luar(df_luar, nama_lensa, sph, cyl, add, kolom_harga = 'harga'):
+    df_luar.columns = df_luar.columns.str.lower().str.strip()
+    kolom_harga = kolom_harga.lower().strip()
     try:
         sph = float(sph)
         cyl = float(cyl) if cyl not in ["", "-"] else None
@@ -161,8 +174,6 @@ def cari_harga_lensa_luar(df_luar, nama_lensa, sph, cyl, add):
                 harga_str = harga_str.replace("rp", "")
 
             # Ganti titik (.) hanya jika titik sebagai pemisah ribuan
-            # Contoh: 850.000 → 850000
-            # Tapi jangan kalau 850.500,00 → malah jadi 85050000
             harga_str = harga_str.replace(".", "").replace(",", "")
 
             try:
@@ -176,13 +187,3 @@ def cari_harga_lensa_luar(df_luar, nama_lensa, sph, cyl, add):
 
     return None  # Tidak ditemukan
 
-def set_font():
-    st.markdown("""
-        <style>
-        @import url('https://fonts.googleapis.com/css2?family=Roboto&display=swap');
-
-        html, body, div, span, input, textarea, select, label, button, p, h1, h2, h3, h4, h5, h6 {
-            font-family: 'Roboto', sans-serif !important;
-        }
-        </style>
-    """, unsafe_allow_html=True)
