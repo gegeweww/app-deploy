@@ -128,62 +128,49 @@ def generate_id_pembayaran(sheet_key, json_path, sheet_name, tanggal_pembayaran)
     id_pembayaran = f"OM/P/{urutan:03d}/{hari_bulanp}/{tahunp}"
     return id_pembayaran
 
-def cari_harga_lensa_luar(df_luar, nama_lensa, sph, cyl, add, kolom_harga = 'harga'):
-    df_luar.columns = df_luar.columns.str.lower().str.strip()
-    kolom_harga = kolom_harga.lower().strip()
+def cari_harga_lensa_luar(df_luar, nama_lensa, sph, cyl, add, kolom_harga="harga_jual"):
+    df_luar.columns = df_luar.columns.str.lower().str.strip().str.replace(" ", "_")
+    kolom_harga = kolom_harga.strip().lower().replace(" ", "_")
+
     try:
         sph = float(sph)
         cyl = float(cyl) if cyl not in ["", "-"] else None
         add = float(add) if add not in ["", "-"] else None
     except:
-        return None  # Gagal parsing input
+        return None
 
     df_cocok = df_luar[df_luar['nama_lensa'].str.lower() == nama_lensa.lower()]
 
     for _, row in df_cocok.iterrows():
         try:
-            # Konversi string koma jadi float, "-" jadi None
             def parse(x):
                 if x == "-":
                     return None
                 return float(str(x).replace(",", "."))
-                        
-            # Ambil rentang
+
             sph_min = parse(row['sph_min'])
-            sph_max = parse(row['sph_max'])            
+            sph_max = parse(row['sph_max'])
             cyl_min = parse(row['cyl_min'])
             cyl_max = parse(row['cyl_max'])
             add_min = parse(row['add_min'])
             add_max = parse(row['add_max'])
 
-            # Validasi SPH
             if sph_min is not None and sph_max is not None and not (sph_min <= sph <= sph_max):
                 continue
-            # Validasi CYL
             if cyl_min is not None and cyl_max is not None and cyl is not None and not (cyl_min <= cyl <= cyl_max):
                 continue
-            # Validasi ADD
             if add_min is not None and add_max is not None and add is not None and not (add_min <= add <= add_max):
                 continue
-        
-            # Tangani harga yang bisa pakai titik atau koma
-            harga_str = str(row['harga']).strip().lower()
 
-            # Hilangkan 'rp' kalau ada
+            harga_str = str(row.get(kolom_harga, "")).strip().lower()
+
             if "rp" in harga_str:
                 harga_str = harga_str.replace("rp", "")
-
-            # Ganti titik (.) hanya jika titik sebagai pemisah ribuan
             harga_str = harga_str.replace(".", "").replace(",", "")
 
-            try:
-                return int(harga_str)
-            except:
-                return None
-
-        
+            return int(harga_str)
         except:
             continue
 
-    return None  # Tidak ditemukan
+    return None
 
