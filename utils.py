@@ -128,9 +128,29 @@ def generate_id_pembayaran(sheet_key, json_path, sheet_name, tanggal_pembayaran)
     id_pembayaran = f"OM/P/{urutan:03d}/{hari_bulanp}/{tahunp}"
     return id_pembayaran
 
-def cari_harga_lensa_luar(df_luar, nama_lensa, sph, cyl, add, kolom_harga="harga_jual"):
+def cari_harga_lensa_stock(df_stock, jenis, merk, pakai_reseller=False):
+    df_stock.columns = df_stock.columns.str.lower().str.strip().str.replace(" ", "_")
+    kolom_harga = 'harga_reseller' if pakai_reseller else 'harga_jual'
+
+    try:
+        harga = df_stock[
+            (df_stock['jenis'].str.lower() == jenis.lower()) &
+            (df_stock['merk'].str.lower() == merk.lower())
+        ][kolom_harga]\
+        .astype(str)\
+        .str.replace("rp", "", case=False)\
+        .str.replace(".", "")\
+        .str.replace(",", "")\
+        .str.strip()\
+        .astype(int)\
+        .values[0]
+        return harga
+    except:
+        return None
+
+def cari_harga_lensa_luar(df_luar, nama_lensa, sph, cyl, add, pakai_reseller=False):
     df_luar.columns = df_luar.columns.str.lower().str.strip().str.replace(" ", "_")
-    kolom_harga = kolom_harga.strip().lower().replace(" ", "_")
+    kolom_harga = 'harga_reseller' if pakai_reseller else 'harga_jual'
 
     try:
         sph = float(sph)

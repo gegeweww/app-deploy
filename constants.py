@@ -11,7 +11,8 @@ SHEET_NAMES = {
     'transaksi': 'Transaksi',
     'pembayaran': 'Pembayaran',
     'pelanggan': 'Pelanggan',
-    'pesanan_luar_kota': 'pesanan luar kota',
+    'pesanan_luar_kota': 'Pesanan Luar Kota',
+    'pembayaran_luar_kota': 'Pembayaran Luar Kota',
     'lensa_luar_stock': 'lensa luar stock'
 }
 

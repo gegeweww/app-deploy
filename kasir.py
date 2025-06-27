@@ -4,7 +4,7 @@ from datetime import datetime, date
 from utils import (
     get_dataframe, append_row,
     get_or_create_pelanggan_id, generate_id_transaksi, generate_id_pembayaran,
-    cari_harga_lensa_luar
+    cari_harga_lensa_luar, cari_harga_lensa_stock
 )
 from constants import SHEET_KEY, JSON_PATH, SHEET_NAMES
 def run():
@@ -129,19 +129,10 @@ def run():
     add_dipakai = add_r if tipe_lensa.lower() in ["progressive", "kryptok", "flattop"] else ""
 
     if status_lensa == "Stock":
-        harga_lensa = df_lensa[
-            (df_lensa['jenis'] == jenis_lensa) & (df_lensa['merk'] == merk_lensa)
-        ]['harga jual']\
-            .astype(str)\
-            .str.replace('Rp', '', regex=False)\
-            .str.replace('.', '', regex=False)\
-            .str.replace(',', '', regex=False)\
-            .str.strip()\
-            .astype(int)\
-            .values[0]
+        harga_lensa = cari_harga_lensa_stock(df_lensa, jenis_lensa, merk_lensa)
 
     else:
-        harga_lensa = cari_harga_lensa_luar(df_lensa, nama_lensa.strip().lower(), sph_r, cyl_r, add_dipakai, kolom_harga="harga jual")
+        harga_lensa = cari_harga_lensa_luar(df_lensa, nama_lensa, sph_r, cyl_r, add_dipakai)
         if harga_lensa is None:
             st.warning("⚠️ Ukuran tidak sesuai rentang harga manapun!")
             st.stop()
@@ -208,6 +199,7 @@ def run():
 
         df = pd.DataFrame(st.session_state.daftar_item)
         total = df['subtotal'].sum()
+        st.dataframe(df, use_container_width=True)
 
         ribuan_digit = (total // 1000) % 10
         dasar = (total // 10000) * 10000
