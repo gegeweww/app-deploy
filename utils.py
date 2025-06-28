@@ -103,6 +103,27 @@ def generate_id_transaksi(sheet_key, json_path, sheet_name, tanggal_transaksi):
     id_transaksi = f"OM/T/{urutan:03d}/{hari_bulan}/{tahun}"
     return id_transaksi
 
+# Buat id transaksi pesanan luar kota
+def generate_id_skw(sheet_key, json_path, sheet_name, nama, tanggal_ambil):
+    df = get_dataframe(sheet_key, json_path, sheet_name)
+    df.columns = df.columns.str.strip().str.lower().str.replace(" ", "_")
+
+    # Kode tetap ditentukan berdasarkan nama
+    kode = "01" if nama == "Nelly" else "02"
+    tanggal_str = pd.to_datetime(tanggal_ambil).strftime("%d-%m-%Y")
+
+    # Ambil semua ID yang cocok tanggal (tanpa filter nama)
+    df = df[df['id_transaksi'].str.endswith(tanggal_str)]
+
+    if df.empty:
+        next_num = 1
+    else:
+        df['urutan'] = df['id_transaksi'].str.extract(r"OMSKW/\d+/(\d+)/")[0].astype(int)
+        next_num = df['urutan'].max() + 1
+
+    return f"OMSKW/{kode}/{next_num:03}/{tanggal_str}"
+
+
 # Buat id pembayaran
 def generate_id_pembayaran(sheet_key, json_path, sheet_name, tanggal_pembayaran):
     df = get_dataframe(sheet_key, json_path, sheet_name)
@@ -148,49 +169,58 @@ def cari_harga_lensa_stock(df_stock, jenis, merk, pakai_reseller=False):
     except:
         return None
 
-def cari_harga_lensa_luar(df_luar, nama_lensa, sph, cyl, add, pakai_reseller=False):
-    df_luar.columns = df_luar.columns.str.lower().str.strip().str.replace(" ", "_")
-    kolom_harga = 'harga_reseller' if pakai_reseller else 'harga_jual'
+import pandas as pd
+
+def cari_harga_lensa_luar(df, nama_lensa, sph, cyl, add, pakai_reseller=True):
+    df.columns = df.columns.str.strip().str.lower().str.replace(" ", "_")
 
     try:
-        sph = float(sph)
-        cyl = float(cyl) if cyl not in ["", "-"] else None
-        add = float(add) if add not in ["", "-"] else None
-    except:
+        sph = float(str(sph).replace(",", "."))
+        cyl = float(str(cyl).replace(",", "."))
+        add = float(str(add).replace(",", ".")) if add not in ["", None] else None
+
+    except ValueError:
         return None
 
-    df_cocok = df_luar[df_luar['nama_lensa'].str.lower() == nama_lensa.lower()]
+    df_filtered = df[df['nama_lensa'] == nama_lensa].copy()
 
-    for _, row in df_cocok.iterrows():
+    # Tambahkan kolom prioritas: 2 = CYL & ADD cocok, 1 = CYL cocok, 0 = umum
+    def calculate_priority(row):
+        has_cyl = pd.notna(pd.to_numeric(row.get("cyl_min"), errors="coerce")) and pd.notna(pd.to_numeric(row.get("cyl_max"), errors="coerce"))
+        has_add = pd.notna(pd.to_numeric(row.get("add_min"), errors="coerce")) and pd.notna(pd.to_numeric(row.get("add_max"), errors="coerce"))
+        return int(has_cyl) + int(has_add)
+
+    df_filtered["prioritas"] = df_filtered.apply(calculate_priority, axis=1)
+    df_filtered = df_filtered.sort_values("prioritas", ascending=False)
+
+    for _, row in df_filtered.iterrows():
         try:
-            def parse(x):
-                if x == "-":
-                    return None
-                return float(str(x).replace(",", "."))
+            sph_min = float(row['sph_min'])
+            sph_max = float(row['sph_max'])
+        except (ValueError, TypeError):
+            continue
 
-            sph_min = parse(row['sph_min'])
-            sph_max = parse(row['sph_max'])
-            cyl_min = parse(row['cyl_min'])
-            cyl_max = parse(row['cyl_max'])
-            add_min = parse(row['add_min'])
-            add_max = parse(row['add_max'])
+        if not (sph_min <= sph <= sph_max):
+            continue
 
-            if sph_min is not None and sph_max is not None and not (sph_min <= sph <= sph_max):
-                continue
-            if cyl_min is not None and cyl_max is not None and cyl is not None and not (cyl_min <= cyl <= cyl_max):
-                continue
-            if add_min is not None and add_max is not None and add is not None and not (add_min <= add <= add_max):
+        cyl_min = pd.to_numeric(row.get('cyl_min'), errors='coerce')
+        cyl_max = pd.to_numeric(row.get('cyl_max'), errors='coerce')
+        if pd.notna(cyl_min) and pd.notna(cyl_max):
+            if not (cyl_min <= cyl <= cyl_max):
                 continue
 
-            harga_str = str(row.get(kolom_harga, "")).strip().lower()
+        add_min = pd.to_numeric(row.get('add_min'), errors='coerce')
+        add_max = pd.to_numeric(row.get('add_max'), errors='coerce')
+        if add is not None and pd.notna(add_min) and pd.notna(add_max):
+            if not (add_min <= add <= add_max):
+                continue
 
-            if "rp" in harga_str:
-                harga_str = harga_str.replace("rp", "")
-            harga_str = harga_str.replace(".", "").replace(",", "")
+        kolom_harga = 'harga_reseller' if pakai_reseller else 'harga_jual'
+        harga_str = str(row.get(kolom_harga, "")).replace("Rp", "").replace(".", "").replace(",", "").strip()
 
+        try:
             return int(harga_str)
-        except:
+        except ValueError:
             continue
 
     return None
-
