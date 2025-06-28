@@ -3,7 +3,8 @@ import pandas as pd
 from datetime import datetime, date
 from utils import (
     get_dataframe, append_row,
-    cari_harga_lensa_luar, cari_harga_lensa_stock
+    cari_harga_lensa_luar, cari_harga_lensa_stock,
+    generate_id_skw
 )
 from constants import SHEET_KEY, JSON_PATH, SHEET_NAMES
 
@@ -29,11 +30,11 @@ def run():
     df_frame, df_lensa_stock, df_lensa_luar = load_data()
 
     st.title("📦 Pesanan Luar Kota")
-    today = datetime.today().strftime("%Y-%m-%d")
+    today = datetime.today().strftime("%d-%m-%Y")
     colL, colR = st.columns(2)
     with colL:
         tanggal_ambil = st.date_input("📅 Tanggal Ambil", value=date.today(), format="DD/MM/YYYY")
-        tanggal_ambil = tanggal_ambil.strftime("%Y-%m-%d")
+        tanggal_ambil = tanggal_ambil.strftime("%d-%m-%Y")
     with colR:
         nama = st.selectbox("Nama Konsumen", ["Rahmat", "Nelly"])
 
@@ -113,7 +114,7 @@ def run():
     ongkir = 25000
     keterangan = st.text_area("Keterangan Tambahan")
     status_kirim = st.radio("Status Kirim", ["Belum Dikirim", "Sudah Dikirim"])
-    tanggal_kirim = st.date_input("Tanggal Kirim", value=date.today(), format="DD/MM/YYYY").strftime("%Y-%m-%d") if status_kirim == "Sudah Dikirim" else "-"
+    tanggal_kirim = st.date_input("Tanggal Kirim", value=date.today(), format="DD/MM/YYYY").strftime("%d-%m-%Y") if status_kirim == "Sudah Dikirim" else "-"
 
     if st.button("📝 Tambah ke Daftar"):
         st.session_state.daftar_item_luar.append({
@@ -153,7 +154,6 @@ def run():
 
         st.dataframe(df, use_container_width=True)
         total = df["subtotal"].sum()
-        total = ongkir + total
 
         st.markdown(f"#### 💰 Total Harga: Rp {total:,.0f}")
 
@@ -177,7 +177,9 @@ def run():
                     st.error("Sheet 'pesanan_luar_kota' tidak ditemukan di constants.py")
                     return
 
-                id_transaksi = f"OMSKW/{'01' if nama == 'Nelly' else '02'}/{tanggal_ambil.strftime('%d-%m-%Y')}"
+                tanggal_display = datetime.strptime(tanggal_ambil, "%d-%m-%Y").strftime('%d-%m-%Y')
+                id_transaksi = generate_id_skw(SHEET_KEY, JSON_PATH, SHEET_NAMES['pesanan_luar_kota'], nama, tanggal_ambil)
+
                 user = st.session_state.get("user", "Unknown")
 
                 for item in st.session_state.daftar_item_luar:
@@ -195,8 +197,6 @@ def run():
                     ]
                     append_row(SHEET_KEY, JSON_PATH, SHEET_NAMES['pesanan_luar_kota'], [str(x) for x in row])
 
-                    append_row(SHEET_KEY, JSON_PATH, sheet_name, [str(x) for x in row])
-
                 sheet_pembayaran = SHEET_NAMES.get("pembayaran_luar_kota")
                 pembayaran_data = [
                     today, tanggal_ambil, id_transaksi, nama, metode, via,
@@ -207,6 +207,7 @@ def run():
                 st.session_state['sudah_submit_luar'] = True
                 st.session_state['ringkasan_luar'] = {
                     'tanggal': today,
+                    'id_transaksi': id_transaksi,
                     'nama': nama,
                     'status': status,
                     'sisa': sisa
@@ -222,6 +223,7 @@ def run():
         with st.expander("✅ Pembayaran Berhasil", expanded=True):
             st.markdown(f"""
             **Tanggal Transaksi:** {data['tanggal']}  
+            **Id Transaksi:** {data.get('id_transaksi', '-')}  
             **Nama:** {data['nama']}  
             **Status:** {data['status']}  
             **Sisa/Kembalian:** Rp {data['sisa']:,.0f}
