@@ -33,7 +33,7 @@ def run():
     colL, colR = st.columns(2)
     with colL:
         tanggal_ambil = st.date_input("📅 Tanggal Ambil", value=date.today(), format="DD/MM/YYYY")
-    tanggal_str = tanggal_ambil.strftime("%Y-%m-%d")
+        tanggal_ambil = tanggal_ambil.strftime("%Y-%m-%d")
     with colR:
         nama = st.selectbox("Nama Konsumen", ["Rahmat", "Nelly"])
 
@@ -117,7 +117,7 @@ def run():
 
     if st.button("📝 Tambah ke Daftar"):
         st.session_state.daftar_item_luar.append({
-            "tanggal_ambil": tanggal_str,
+            "tanggal_ambil": tanggal_ambil,
             "nama": nama,
             "status_lensa": status_lensa,
             "jenis": jenis_lensa,
@@ -153,6 +153,7 @@ def run():
 
         st.dataframe(df, use_container_width=True)
         total = df["subtotal"].sum()
+        total = ongkir + total
 
         st.markdown(f"#### 💰 Total Harga: Rp {total:,.0f}")
 
@@ -184,7 +185,7 @@ def run():
                     ukuran_l = item['ukuran_l'].split(', ')
 
                     row = [
-                        today, tanggal_str, id_transaksi, item['nama'],
+                        today, tanggal_ambil, id_transaksi, item['nama'],
                         item['status_lensa'], item['jenis'], item['tipe'], item['merk'], item['nama_lensa'],
                         ukuran_r[0].split(": ")[1], ukuran_r[1].split(": ")[1], ukuran_r[2].split(": ")[1], ukuran_r[3].split(": ")[1],
                         ukuran_l[0].split(": ")[1], ukuran_l[1].split(": ")[1], ukuran_l[2].split(": ")[1], ukuran_l[3].split(": ")[1],
@@ -198,7 +199,7 @@ def run():
 
                 sheet_pembayaran = SHEET_NAMES.get("pembayaran_luar_kota")
                 pembayaran_data = [
-                    today, tanggal_str, nama, metode, via,
+                    today, tanggal_ambil, id_transaksi, nama, metode, via,
                     int(total), int(nominal), int(sisa), status, user
                 ]
                 append_row(SHEET_KEY, JSON_PATH, sheet_pembayaran, [str(x) for x in pembayaran_data])
