@@ -73,4 +73,5 @@ def run():
     if search_nama:
         df_filtered = df_filtered[df_filtered['nama'].str.contains(search_nama, case=False, na=False)]
 
-    st.dataframe(df_filtered.reset_index(drop=True), use_container_width=True)
+    st.dataframe(df_filtered.drop(columns=['bulan'], errors='ignore').reset_index(drop=True), use_container_width=True)
+
