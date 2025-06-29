@@ -5,10 +5,12 @@ import dframe
 import dlensa
 import logframe
 import iframe
-import kasircb
+import kasir
 import pemb_angsuran
 import logtransaksi
 import luarkota
+import pemb_luarkota
+import logluarkota
 
 def show_menu():
     st.sidebar.title("📦 Navigasi")
@@ -21,29 +23,35 @@ def show_menu():
         st.rerun()
 
     menu = st.sidebar.radio("Pilih Halaman:", [
-        "📊 Data Frame",
-        "📊 Data Lensa",
-        "📄 Log Frame",
-        "➕ Input Stock Frame",
-        "Kasir",
-        "Pembayaran Angsuran",
+        "Kasir",        
         "History Transaksi",
-        "Pesanan Luar Kota"
+        "Pembayaran Angsuran",
+        "Pesanan Luar Kota",
+        "Pembayaran Luar Kota",
+        "History Luar Kota",
+        "Data Frame",
+        "Data Lensa",
+        "Log Frame",
+        "Input Stock Frame"
     ])
 
-    if menu == "📊 Data Frame":
+    if menu == "Data Frame":
         dframe.run()
-    elif menu == "📊 Data Lensa":
+    elif menu == "Data Lensa":
         dlensa.run()
-    elif menu == "📄 Log Frame":
+    elif menu == "Log Frame":
         logframe.run()
-    elif menu == "➕ Input Stock Frame":
+    elif menu == "Input Stock Frame":
         iframe.run()
     elif menu == "Kasir":
-        kasircb.run()
+        kasir.run()
     elif menu == "Pembayaran Angsuran":
         pemb_angsuran.run()
     elif menu == "History Transaksi":
         logtransaksi.run()
     elif menu == "Pesanan Luar Kota":
         luarkota.run()
+    elif menu == "Pembayaran Luar Kota":
+        pemb_luarkota.run()
+    elif menu == "logluarkota":
+        logluarkota.run()

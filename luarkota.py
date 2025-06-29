@@ -4,7 +4,7 @@ from datetime import datetime, date
 from utils import (
     get_dataframe, append_row,
     cari_harga_lensa_luar, cari_harga_lensa_stock,
-    generate_id_skw
+    generate_id_skw, generate_id_pemb_skw
 )
 from constants import SHEET_KEY, JSON_PATH, SHEET_NAMES
 
@@ -30,7 +30,7 @@ def run():
     df_frame, df_lensa_stock, df_lensa_luar = load_data()
 
     st.title("📦 Pesanan Luar Kota")
-    today = datetime.today().strftime("%d-%m-%Y")
+    today = datetime.today().strftime("%d-%m-%Y, %H:%M:%S")
     colL, colR = st.columns(2)
     with colL:
         tanggal_ambil = st.date_input("📅 Tanggal Ambil", value=date.today(), format="DD/MM/YYYY")
@@ -113,8 +113,6 @@ def run():
     potong = st.selectbox("Ongkos Potong", [17000, 27000, 32000])
     ongkir = 25000
     keterangan = st.text_area("Keterangan Tambahan")
-    status_kirim = st.radio("Status Kirim", ["Belum Dikirim", "Sudah Dikirim"])
-    tanggal_kirim = st.date_input("Tanggal Kirim", value=date.today(), format="DD/MM/YYYY").strftime("%d-%m-%Y") if status_kirim == "Sudah Dikirim" else "-"
 
     if st.button("📝 Tambah ke Daftar"):
         st.session_state.daftar_item_luar.append({
@@ -133,8 +131,6 @@ def run():
             "potong": potong,
             "ongkir": ongkir,
             "keterangan": keterangan,
-            "status_kirim": status_kirim,
-            "tanggal_kirim": tanggal_kirim
         })
         st.success("Item berhasil ditambahkan!")
 
@@ -160,6 +156,10 @@ def run():
         metode = st.selectbox("Jenis Pembayaran", ["Angsuran", "Full"])
         via = st.selectbox("Via Pembayaran", ["Cash", "TF", "Qris"])
         nominal = st.number_input("Masukkan Nominal", min_value=0)
+        if nominal > 0:
+            tanggal_bayar = st.date_input("📅 Tanggal Bayar", value=date.today(), format="DD/MM/YYYY").strftime("%d-%m-%Y")
+        else:
+            tanggal_bayar = "-"
         sisa = nominal - total
         status = "Lunas" if sisa >= 0 else "Belum Lunas"
 
@@ -179,7 +179,7 @@ def run():
 
                 tanggal_display = datetime.strptime(tanggal_ambil, "%d-%m-%Y").strftime('%d-%m-%Y')
                 id_transaksi = generate_id_skw(SHEET_KEY, JSON_PATH, SHEET_NAMES['pesanan_luar_kota'], nama, tanggal_ambil)
-
+                id_pembayaran = generate_id_pemb_skw(SHEET_KEY, JSON_PATH, SHEET_NAMES['pesanan_luar_kota'], nama, tanggal_ambil)
                 user = st.session_state.get("user", "Unknown")
 
                 for item in st.session_state.daftar_item_luar:
@@ -192,17 +192,19 @@ def run():
                         ukuran_r[0].split(": ")[1], ukuran_r[1].split(": ")[1], ukuran_r[2].split(": ")[1], ukuran_r[3].split(": ")[1],
                         ukuran_l[0].split(": ")[1], ukuran_l[1].split(": ")[1], ukuran_l[2].split(": ")[1], ukuran_l[3].split(": ")[1],
                         item['harga_lensa'], item['diskon'], item['potong'], item['ongkir'],
-                        item['keterangan'], item['status_kirim'], item['tanggal_kirim'],
-                        item['harga_final'] + item['potong'] + item['ongkir'], user
+                        item['keterangan'], item['harga_final'] + item['potong'] + item['ongkir'], user
                     ]
                     append_row(SHEET_KEY, JSON_PATH, SHEET_NAMES['pesanan_luar_kota'], [str(x) for x in row])
 
-                sheet_pembayaran = SHEET_NAMES.get("pembayaran_luar_kota")
+                df_pembayaran = get_dataframe(SHEET_KEY, JSON_PATH, SHEET_NAMES['pembayaran_luar_kota'])
+                df_pembayaran.columns = df_pembayaran.columns.str.strip().str.lower().str.replace(" ", "_")
+                pembayaran_ke = df_pembayaran[df_pembayaran['id_transaksi'] == id_transaksi].shape[0] + 1
+
                 pembayaran_data = [
-                    today, tanggal_ambil, id_transaksi, nama, metode, via,
-                    int(total), int(nominal), int(sisa), status, user
+                    today, tanggal_ambil, id_transaksi, id_pembayaran, nama, metode, via,
+                    int(total), int(nominal), int(sisa), pembayaran_ke, tanggal_bayar, status, user
                 ]
-                append_row(SHEET_KEY, JSON_PATH, sheet_pembayaran, [str(x) for x in pembayaran_data])
+                append_row(SHEET_KEY, JSON_PATH, SHEET_NAMES['pembayaran_luar_kota'], [str(x) for x in pembayaran_data])
 
                 st.session_state['sudah_submit_luar'] = True
                 st.session_state['ringkasan_luar'] = {

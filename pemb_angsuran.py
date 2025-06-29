@@ -41,7 +41,11 @@ def run():
     df_belum_lunas = df_belum_lunas[df_belum_lunas['status'].str.lower() == 'belum lunas']
 
     # debug data
-    st.write("⬇️ Data Belum Lunas:", df_belum_lunas[['id_transaksi', 'sisa', 'status']])
+    st.write("⬇️ Data Belum Lunas:", df_belum_lunas[['id_transaksi', 'nama', 'status']])
+    
+    if st.button("🔄 Refresh Data"):
+        st.cache_data.clear()
+        st.rerun()
 
     if df_belum_lunas.empty:
         st.success("Semua transaksi telah lunas!")
@@ -72,11 +76,14 @@ def run():
             st.markdown(f"**Total Harga:** Rp {total:,.0f}".replace(",", "."))
             st.markdown(f"**Sisa Saat Ini:** Rp {sisa:,.0f}".replace(",", "."))
 
-            raw_input = st.text_input(f"💰 Nominal Bayar untuk {id_transaksi}", value="", key=f"bayar_{id_transaksi}")
-            cleaned_input = re.sub(r"[^0-9]", "", raw_input)
-            bayar = int(cleaned_input) if cleaned_input else 0
-
-            st.markdown(f"Nominal Diterima: Rp {bayar:,.0f}".replace(",", "."))
+            col1, col2 = st.columns(2)
+            with col1:
+                raw_input = st.text_input(f"💰 Nominal Bayar untuk {id_transaksi}", value="", key=f"bayar_{id_transaksi}")
+                cleaned_input = re.sub(r"[^0-9]", "", raw_input)
+                bayar = int(cleaned_input) if cleaned_input else 0
+                st.markdown(f"Nominal Diterima: Rp {bayar:,.0f}".replace(",", "."))
+            with col2:
+                via = st.selectbox("Via Pembayaran", ["Cash", "TF", "Qris"], key=f"via_{id_transaksi}")
 
             if st.button(f"🔄 Update Pembayaran {id_transaksi}"):
                 if bayar <= 0:
@@ -97,10 +104,12 @@ def run():
 
                 new_row = [
                     tanggal_hari_ini, id_transaksi, id_pembayaran_baru, row['id_pelanggan'], tanggal,
-                    nama, row['no_hp'], row['metode'], row['via'], int(total), int(bayar), sisa_baru, status_baru,
-                    pembayaran_ke, user
+                    nama, row['no_hp'], row['metode'], via,
+                    str(int(total)), str(int(bayar)), str(int(sisa_baru)), status_baru,
+                    str(pembayaran_ke), user
                 ]
-                append_row(SHEET_KEY, JSON_PATH, SHEET_NAMES['pembayaran'], [str(x) for x in new_row])
+                append_row(SHEET_KEY, JSON_PATH, SHEET_NAMES['pembayaran'], new_row)
+
 
                 st.session_state['pembayaran_berhasil'] = {
                     'id': id_transaksi,

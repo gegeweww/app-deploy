@@ -30,7 +30,7 @@ def run():
     df_frame, df_lensa_stock, df_lensa_luar = load_data()
 
     st.title("🧾 Transaksi Kasir")
-    today = datetime.today().strftime("%Y-%m-%d")
+    today = datetime.today().strftime("%Y-%m-%d,%H:%M:%S")
     tanggal_transaksi = st.date_input("📅 Tanggal Transaksi", value=date.today(), format="DD/MM/YYYY")
     tanggal_str = tanggal_transaksi.strftime("%Y-%m-%d")
 
@@ -238,11 +238,12 @@ def run():
 
             pembayaran_data = [
                 today, id_transaksi, id_pembayaran, id_pelanggan,
-                tanggal_str, nama, kontak, metode, via, harga_final, nominal, sisa, status,
-                pembayaran_ke, user
+                tanggal_str, nama, kontak, metode, via,
+                str(int(harga_final)), str(int(nominal)), str(int(sisa)), status,
+                str(pembayaran_ke), user
             ]
-            append_row(SHEET_KEY, JSON_PATH, SHEET_NAMES['pembayaran'], [str(x) for x in pembayaran_data])
-            
+            append_row(SHEET_KEY, JSON_PATH, SHEET_NAMES['pembayaran'], pembayaran_data)
+
             st.cache_data.clear()
 
             st.session_state['ringkasan_tersimpan'] = {

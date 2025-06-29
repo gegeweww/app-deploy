@@ -3,10 +3,11 @@ from menu import show_menu
 from constants import USERS
 from utils import set_font
 
-st.set_page_config(page_title="Optik App", layout="wide")
+st.set_page_config(page_title="Optik Maroon Pontianak", layout="centered")
 set_font()
 
 def pilih_user():
+    st.title("Optik Maroon Pontianak")
     st.title("👤 Pilih User")
     selected = st.selectbox("Pilih User", options=USERS, index=None, format_func=lambda x: x if x else "— pilih user —")
 

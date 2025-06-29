@@ -108,20 +108,22 @@ def generate_id_skw(sheet_key, json_path, sheet_name, nama, tanggal_ambil):
     df = get_dataframe(sheet_key, json_path, sheet_name)
     df.columns = df.columns.str.strip().str.lower().str.replace(" ", "_")
 
-    # Kode tetap ditentukan berdasarkan nama
     kode = "01" if nama == "Nelly" else "02"
     tanggal_str = pd.to_datetime(tanggal_ambil).strftime("%d-%m-%Y")
 
-    # Ambil semua ID yang cocok tanggal (tanpa filter nama)
-    df = df[df['id_transaksi'].str.endswith(tanggal_str)]
-
-    if df.empty:
+    # Ambil semua id_transaksi yang valid (tidak perlu filter tanggal)
+    if 'id_transaksi' not in df.columns:
         next_num = 1
     else:
-        df['urutan'] = df['id_transaksi'].str.extract(r"OMSKW/\d+/(\d+)/")[0].astype(int)
-        next_num = df['urutan'].max() + 1
+        df = df[df['id_transaksi'].str.contains(r"OMSKW/\d+/\d+/")]
+        if df.empty:
+            next_num = 1
+        else:
+            df['urutan'] = df['id_transaksi'].str.extract(r"OMSKW/\d+/(\d+)/")[0].astype(int)
+            next_num = df['urutan'].max() + 1
 
     return f"OMSKW/{kode}/{next_num:03}/{tanggal_str}"
+
 
 
 # Buat id pembayaran
@@ -149,6 +151,28 @@ def generate_id_pembayaran(sheet_key, json_path, sheet_name, tanggal_pembayaran)
     id_pembayaran = f"OM/P/{urutan:03d}/{hari_bulanp}/{tahunp}"
     return id_pembayaran
 
+# Buat id pembayaran pesanan luar kota
+def generate_id_pemb_skw(sheet_key, json_path, sheet_name, nama, tanggal_ambil):
+    df = get_dataframe(sheet_key, json_path, sheet_name)
+    df.columns = df.columns.str.strip().str.lower().str.replace(" ", "_")
+
+    kode = "01" if nama == "Nelly" else "02"
+    tanggal_str = pd.to_datetime(tanggal_ambil).strftime("%d-%m-%Y")
+
+    # Ambil semua id_pembayaran yang valid (tidak perlu filter tanggal)
+    if 'id_pembayaran' not in df.columns:
+        next_num = 1
+    else:
+        df = df[df['id_pembayaran'].str.contains(r"OMSKW/P/\d+/\d+/")]
+        if df.empty:
+            next_num = 1
+        else:
+            df['urutan'] = df['id_pembayaran'].str.extract(r"OMSKW/P/\d+/(\d+)/")[0].astype(int)
+            next_num = df['urutan'].max() + 1
+
+    return f"OMSKW/P/{kode}/{next_num:03}/{tanggal_str}"
+
+# Cari Harga Lensa Stock
 def cari_harga_lensa_stock(df_stock, jenis, merk, pakai_reseller=False):
     df_stock.columns = df_stock.columns.str.lower().str.strip().str.replace(" ", "_")
     kolom_harga = 'harga_reseller' if pakai_reseller else 'harga_jual'
@@ -169,8 +193,7 @@ def cari_harga_lensa_stock(df_stock, jenis, merk, pakai_reseller=False):
     except:
         return None
 
-import pandas as pd
-
+# Cari Harga Lensa Luar Stock
 def cari_harga_lensa_luar(df, nama_lensa, sph, cyl, add, pakai_reseller=True):
     df.columns = df.columns.str.strip().str.lower().str.replace(" ", "_")
 

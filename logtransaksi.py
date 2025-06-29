@@ -14,6 +14,11 @@ def run():
     st.title("📜 Data Transaksi Optik Maroon")
 
     df_transaksi, df_pembayaran = load_data()
+    
+    if st.button("🔄 Refresh Data"):
+        st.cache_data.clear()
+        st.rerun()
+
 
     # Normalisasi kolom
     df_transaksi.columns = df_transaksi.columns.str.strip().str.lower().str.replace(' ', '_')
@@ -33,13 +38,20 @@ def run():
         .merge(df_status, on='id_transaksi', how='left')
     )
 
-    if 'nama_pelanggan' not in df_ringkas.columns:
-        df_ringkas['nama_pelanggan'] = df_ringkas.get('nama', '')
+    if 'nama' not in df_ringkas.columns:
+        df_ringkas['nama'] = df_ringkas.get('nama', '')
 
     if 'user' not in df_ringkas.columns:
         df_ringkas['user'] = df_transaksi.get('user', '-')
 
-    selected_cols = ['tanggal', 'id_transaksi', 'nama_pelanggan', 'merk_frame', 'jenis_lensa', 'total_harga', 'status', 'user']
+    selected_cols = ['tanggal', 
+                     'id_transaksi', 
+                     'nama', 
+                     'merk_frame', 
+                     'jenis_lensa', 
+                     'total_harga', 
+                     'status', 
+                     'user']
     df_ringkas = df_ringkas[[col for col in selected_cols if col in df_ringkas.columns]]
 
     df_ringkas['tanggal'] = pd.to_datetime(df_ringkas['tanggal'], errors='coerce')
@@ -59,6 +71,6 @@ def run():
                 
     search_nama = st.text_input("🔍 Cari Nama Pelanggan")
     if search_nama:
-        df_filtered = df_filtered[df_filtered['nama_pelanggan'].str.contains(search_nama, case=False, na=False)]
+        df_filtered = df_filtered[df_filtered['nama'].str.contains(search_nama, case=False, na=False)]
 
     st.dataframe(df_filtered.reset_index(drop=True), use_container_width=True)
