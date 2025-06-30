@@ -53,5 +53,5 @@ def show_menu():
         luarkota.run()
     elif menu == "Pembayaran Luar Kota":
         pemb_luarkota.run()
-    elif menu == "logluarkota":
+    elif menu == "History Luar Kota":
         logluarkota.run()

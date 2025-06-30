@@ -11,7 +11,7 @@ def load_data():
     return df_log, df_pembayaran
 
 def run():
-    st.title("📦 History Luar Kota (Per Item)")
+    st.title("📦 History Luar Kota")
 
     if st.button("🔄 Refresh Data"):
         st.cache_data.clear()
