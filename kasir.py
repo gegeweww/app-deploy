@@ -132,7 +132,7 @@ def run():
         harga_lensa = cari_harga_lensa_stock(df_lensa, jenis_lensa, merk_lensa)
 
     else:
-        harga_lensa = cari_harga_lensa_luar(df_lensa, nama_lensa, sph_r, cyl_r, add_dipakai)
+        harga_lensa = cari_harga_lensa_luar(df_lensa, nama_lensa, sph_r, cyl_r, add_dipakai, pakai_reseller=False)
         if harga_lensa is None:
             st.warning("⚠️ Ukuran tidak sesuai rentang harga manapun!")
             st.stop()
