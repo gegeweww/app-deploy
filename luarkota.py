@@ -228,7 +228,7 @@ def run():
             **Id Transaksi:** {data.get('id_transaksi', '-')}  
             **Nama:** {data['nama']}  
             **Status:** {data['status']}  
-            **Sisa/Kembalian:** Rp {data['sisa']:,.0f}
+            **Sisa/Kembalian:** Rp {data['sisa']:,.0f}log
             """)
             if st.button("OK"):
                 st.session_state.pop("ringkasan_luar", None)

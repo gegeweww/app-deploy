@@ -1,2 +1,4 @@
 metal-filament-457905-i2-0e50ac501de4.json
 token terminal.txt
+__pycache__/
+*.pyc

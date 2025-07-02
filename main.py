@@ -1,9 +1,10 @@
 import streamlit as st
+st.set_page_config(page_title="Optik Maroon Pontianak", layout="centered")
 from menu import show_menu
 from constants import USERS
 from utils import set_font
 
-st.set_page_config(page_title="Optik Maroon Pontianak", layout="centered")
+
 set_font()
 
 def pilih_user():
