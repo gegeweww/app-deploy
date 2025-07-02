@@ -1,6 +1,5 @@
 import gspread
 import pandas as pd
-from oauth2client.service_account import ServiceAccountCredentials
 from google.oauth2.service_account import Credentials
 from constants import SHEET_NAMES
 import streamlit as st
@@ -18,26 +17,21 @@ def set_font():
     """, unsafe_allow_html=True)
 
 # Autentikasi dan akses Google Sheet
-def get_gsheet_client(json_path):
-    scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
-    creds = ServiceAccountCredentials.from_json_keyfile_name(json_path, scope)
-    client = gspread.authorize(creds)
-    return client
-
-def authorize_gspread(json_path):
-    scopes = ['https://www.googleapis.com/auth/spreadsheets']
-    credentials = Credentials.from_service_account_file(json_path, scopes=scopes)
+def authorize_gspread():
+    credentials = Credentials.from_service_account_info(
+        st.secrets["gcp_service_account"],
+        scopes=["https://www.googleapis.com/auth/spreadsheets"]
+    )
     client = gspread.authorize(credentials)
     return client
-
-def get_sheet(sheet_key: str, json_path: str, sheet_name: str):
-    client = get_gsheet_client(json_path)
+def get_sheet(sheet_key: str, sheet_name: str):
+    client = authorize_gspread()
     sheet = client.open_by_key(sheet_key).worksheet(sheet_name)
     return sheet
 
 # Baca isi sheet ke DataFrame dan bersihkan
-def get_dataframe(sheet_key: str, json_path: str, sheet_name: str):
-    sheet = get_sheet(sheet_key, json_path, sheet_name)
+def get_dataframe(sheet_key: str, sheet_name: str):
+    sheet = get_sheet(sheet_key, sheet_name)
     values = sheet.get_all_values()
 
     if not values or not values[0]:
@@ -58,14 +52,14 @@ def get_dataframe(sheet_key: str, json_path: str, sheet_name: str):
 
 
 # Tambahkan satu baris ke sheet
-def append_row(sheet_key, json_path, sheet_name, row_data):
-    client = authorize_gspread(json_path)
+def append_row(sheet_key, sheet_name, row_data):
+    client = authorize_gspread()
     sheet = client.open_by_key(sheet_key).worksheet(sheet_name)
     sheet.append_row(row_data)
 
 # Buat atau cek id pelanggan
-def get_or_create_pelanggan_id(sheet_key, json_path, sheet_name, nama, no_hp):
-    df = get_dataframe(sheet_key, json_path, sheet_name)
+def get_or_create_pelanggan_id(sheet_key, sheet_name, nama, no_hp):
+    df = get_dataframe(sheet_key, sheet_name)
     df.columns = df.columns.str.strip().str.lower().str.replace(" ", "_")
 
     # Cek apakah sudah ada
@@ -76,13 +70,13 @@ def get_or_create_pelanggan_id(sheet_key, json_path, sheet_name, nama, no_hp):
     # Generate ID baru
     id_baru = f"OM{len(df)+1:03}"
     new_row = [id_baru, nama, no_hp]
-    append_row(sheet_key, json_path, sheet_name, new_row)
+    append_row(sheet_key, sheet_name, new_row)
     return id_baru
 
 
 # Buat id transaksi
-def generate_id_transaksi(sheet_key, json_path, sheet_name, tanggal_transaksi):
-    df = get_dataframe(sheet_key, json_path, sheet_name)
+def generate_id_transaksi(sheet_key, sheet_name, tanggal_transaksi):
+    df = get_dataframe(sheet_key, sheet_name)
     df.columns = df.columns.str.strip()
 
     urutan = 1
@@ -105,8 +99,8 @@ def generate_id_transaksi(sheet_key, json_path, sheet_name, tanggal_transaksi):
     return id_transaksi
 
 # Buat id transaksi pesanan luar kota
-def generate_id_skw(sheet_key, json_path, sheet_name, nama, tanggal_ambil):
-    df = get_dataframe(sheet_key, json_path, sheet_name)
+def generate_id_skw(sheet_key, sheet_name, nama, tanggal_ambil):
+    df = get_dataframe(sheet_key, sheet_name)
     df.columns = df.columns.str.strip().str.lower().str.replace(" ", "_")
 
     kode = "01" if nama == "Nelly" else "02"
@@ -128,8 +122,8 @@ def generate_id_skw(sheet_key, json_path, sheet_name, nama, tanggal_ambil):
 
 
 # Buat id pembayaran
-def generate_id_pembayaran(sheet_key, json_path, sheet_name, tanggal_pembayaran):
-    df = get_dataframe(sheet_key, json_path, sheet_name)
+def generate_id_pembayaran(sheet_key, sheet_name, tanggal_pembayaran):
+    df = get_dataframe(sheet_key, sheet_name)
     df.columns = df.columns.str.strip()
 
     urutan = 1
@@ -153,8 +147,8 @@ def generate_id_pembayaran(sheet_key, json_path, sheet_name, tanggal_pembayaran)
     return id_pembayaran
 
 # Buat id pembayaran pesanan luar kota
-def generate_id_pemb_skw(sheet_key, json_path, sheet_name, nama, tanggal_ambil):
-    df = get_dataframe(sheet_key, json_path, sheet_name)
+def generate_id_pemb_skw(sheet_key, sheet_name, nama, tanggal_ambil):
+    df = get_dataframe(sheet_key, sheet_name)
     df.columns = df.columns.str.strip().str.lower().str.replace(" ", "_")
 
     kode = "01" if nama == "Nelly" else "02"
@@ -266,8 +260,8 @@ def buat_logframe_status(source: str, mode=None, status_frame=None, merk=None, k
             return 'terjual', f'terjual dalam transaksi: {id_transaksi}, Nama: {nama}'
         else:
             return '', ''
-        
-def catat_logframe(sheet_key, json_path, merk, kode, source, mode=None, status_frame=None, jumlah_input=None, stock_lama=None, stock_baru=None, id_transaksi=None, nama=None, user="Unknown"):
+
+def catat_logframe(sheet_key, sheet_name, merk, kode, source, mode=None, status_frame=None, jumlah_input=None, stock_lama=None, stock_baru=None, id_transaksi=None, nama=None, user="Unknown"):
     from datetime import datetime
 
     status_log, keterangan = buat_logframe_status(
@@ -286,4 +280,4 @@ def catat_logframe(sheet_key, json_path, merk, kode, source, mode=None, status_f
     if status_log and keterangan:
         timestamp = datetime.now().strftime("%d-%m-%Y %H:%M:%S")
         row = [timestamp, merk, kode, status_log, keterangan, user]
-        append_row(sheet_key, json_path, SHEET_NAMES["logframe"], row)
+        append_row(sheet_key, sheet_name, row)
