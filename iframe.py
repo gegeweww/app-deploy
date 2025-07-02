@@ -1,8 +1,8 @@
 import streamlit as st
 from datetime import datetime
-from constants import SHEET_KEY, SHEET_NAMES, authorize_gspread
+from constants import SHEET_KEY, SHEET_NAMES
 from utils import (
-    get_dataframe, get_gsheet_client, 
+    authorize_gspread, get_dataframe, get_gsheet_client, 
     append_row, buat_logframe_status, catat_logframe
 )
 
