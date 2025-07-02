@@ -2,6 +2,7 @@ import gspread
 import pandas as pd
 from oauth2client.service_account import ServiceAccountCredentials
 from google.oauth2.service_account import Credentials
+from constants import SHEET_NAMES
 import streamlit as st
 
 # Font
@@ -247,3 +248,35 @@ def cari_harga_lensa_luar(df, nama_lensa, sph, cyl, add, pakai_reseller=True):
             continue
 
     return None
+
+
+# Buat status log untuk frame
+def buat_logframe_status(source: str, mode=None, status_frame=None, stock_lama=None, stock_baru=None, id_transaksi=None, nama=None):
+    if source == 'iframe':
+        if mode == 'Tambah Stock':
+            return 'masuk', 'Tambah Stock'
+        elif mode == 'Revisi':
+            return 'revisi', f'ubah dari {stock_lama} jadi {stock_baru}'
+    elif source == 'kasir':
+        if status_frame == 'Stock':
+            return 'terjual', f'terjual dalam transaksi: {id_transaksi}, oleh {nama}'
+        else:
+            return '', ''
+        
+def catat_logframe(sheet_key, json_path, merk, kode, source, mode=None, status_frame=None, stock_lama=None, stock_baru=None, id_transaksi=None, nama=None, user="Unknown"):
+    from datetime import datetime
+
+    status_log, keterangan = buat_logframe_status(
+        source=source,
+        mode=mode,
+        status_frame=status_frame,
+        stock_lama=stock_lama,
+        stock_baru=stock_baru,
+        id_transaksi=id_transaksi,
+        nama=nama
+    )
+
+    if status_log and keterangan:
+        timestamp = datetime.now().strftime("%d-%m-%Y %H:%M:%S")
+        row = [timestamp, merk, kode, status_log, keterangan, user]
+        append_row(sheet_key, json_path, SHEET_NAMES["logframe"], row)
