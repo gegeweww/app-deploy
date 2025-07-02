@@ -60,6 +60,7 @@ def run():
                         kode=selected_kode,
                         source="iframe",
                         mode=mode,
+                        jumlah_input=jumlah_input,
                         stock_lama=stock_lama,
                         stock_baru=stock_baru,
                         user=user
@@ -76,8 +77,14 @@ def run():
         stock_baru = st.number_input('Jumlah', min_value=0, step=1)
 
         if st.button('Tambah'):
+            if selected_merk in df['Merk'].unique():
+                st.warning("Merk ini sudah terdaftar. Silakan ubah ke mode Tambah Stock atau Tambah Kode.")
+                st.stop()
             frame_data = [selected_merk, selected_kode, distributor, harga_modal, harga_jual, stock_baru]
             append_row(SHEET_KEY, JSON_PATH, SHEET_NAMES['dframe'], frame_data)
+            sheet = client.open_by_key(SHEET_KEY).worksheet(SHEET_NAMES["dframe"])
+            sheet.sort((1, 'asc'), range='A2:F')  # Sort by column 1 (Merk) A-Z
+
             with st.expander("📦 Stock baru berhasil ditambahkan"):
                 st.markdown(f"""
                     **Merk:** {selected_merk}  
@@ -109,8 +116,15 @@ def run():
         stock_baru = st.number_input('Jumlah', min_value=0, step=1)
 
         if st.button('Tambah'):
+            if ((df['Merk'] == selected_merk) & (df['Kode'] == selected_kode)).any():
+                st.warning("Merk dan kode ini sudah terdaftar. Silakan ubah ke mode Tambah Stock.")
+                st.stop()
+
             frame_data = [selected_merk, selected_kode, distributor, harga_modal, harga_jual, stock_baru]
             append_row(SHEET_KEY, JSON_PATH, SHEET_NAMES['dframe'], frame_data)
+            sheet = client.open_by_key(SHEET_KEY).worksheet(SHEET_NAMES["dframe"])
+            sheet.sort((1, 'asc'))  # Sort by column 1 (Merk) A-Z
+            
             with st.expander("📦 Kode baru berhasil ditambahkan"):
                 st.markdown(f"""
                     **Merk:** {selected_merk}  
