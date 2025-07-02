@@ -1,11 +1,11 @@
 import streamlit as st
 from utils import get_dataframe
-from constants import SHEET_KEY, JSON_PATH, SHEET_NAMES
+from constants import SHEET_KEY, SHEET_NAMES
 
 def run():
     @st.cache_data(ttl=300)
     def show_data():
-        return get_dataframe(SHEET_KEY, JSON_PATH, SHEET_NAMES['dframe'])
+        return get_dataframe(SHEET_KEY, SHEET_NAMES['dframe'])
 
     st.title("📦 Database Frame")
     df = show_data()

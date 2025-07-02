@@ -1,6 +1,6 @@
 import streamlit as st
 from datetime import datetime
-from constants import SHEET_KEY, JSON_PATH, SHEET_NAMES
+from constants import SHEET_KEY, SHEET_NAMES, authorize_gspread
 from utils import (
     get_dataframe, get_gsheet_client, 
     append_row, buat_logframe_status, catat_logframe
@@ -9,12 +9,12 @@ from utils import (
 
 def run():
     user = st.session_state["user"]
-    client = get_gsheet_client(JSON_PATH)
+    client = authorize_gspread()
 
     # Akses sheet utama
     sheet = client.open_by_key(SHEET_KEY).worksheet(SHEET_NAMES["dframe"])
 
-    df = get_dataframe(SHEET_KEY, JSON_PATH, SHEET_NAMES["dframe"])
+    df = get_dataframe(SHEET_KEY, SHEET_NAMES["dframe"])
     df['Kode'] = df['Kode'].astype(str)
 
     # Data Frame
@@ -55,7 +55,6 @@ def run():
 
                     catat_logframe(
                         sheet_key=SHEET_KEY,
-                        json_path=JSON_PATH,
                         merk=selected_merk,
                         kode=selected_kode,
                         source="iframe",
@@ -81,7 +80,7 @@ def run():
                 st.warning("Merk ini sudah terdaftar. Silakan ubah ke mode Tambah Stock atau Tambah Kode.")
                 st.stop()
             frame_data = [selected_merk, selected_kode, distributor, harga_modal, harga_jual, stock_baru]
-            append_row(SHEET_KEY, JSON_PATH, SHEET_NAMES['dframe'], frame_data)
+            append_row(SHEET_KEY, SHEET_NAMES['dframe'], frame_data)
             sheet = client.open_by_key(SHEET_KEY).worksheet(SHEET_NAMES["dframe"])
             sheet.sort((1, 'asc'), range='A2:F')  # Sort by column 1 (Merk) A-Z
 
@@ -97,7 +96,6 @@ def run():
 
             catat_logframe(
                 sheet_key=SHEET_KEY,
-                json_path=JSON_PATH,
                 merk=selected_merk,
                 kode=selected_kode,
                 source="iframe",
@@ -121,7 +119,7 @@ def run():
                 st.stop()
 
             frame_data = [selected_merk, selected_kode, distributor, harga_modal, harga_jual, stock_baru]
-            append_row(SHEET_KEY, JSON_PATH, SHEET_NAMES['dframe'], frame_data)
+            append_row(SHEET_KEY, SHEET_NAMES['dframe'], frame_data)
             sheet = client.open_by_key(SHEET_KEY).worksheet(SHEET_NAMES["dframe"])
             sheet.sort((1, 'asc'))  # Sort by column 1 (Merk) A-Z
             
@@ -137,7 +135,6 @@ def run():
 
             catat_logframe(
                 sheet_key=SHEET_KEY,
-                json_path=JSON_PATH,
                 merk=selected_merk,
                 kode=selected_kode,
                 source="iframe",

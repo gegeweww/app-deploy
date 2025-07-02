@@ -6,13 +6,13 @@ from utils import (
     get_or_create_pelanggan_id, generate_id_transaksi, generate_id_pembayaran,
     cari_harga_lensa_luar, cari_harga_lensa_stock, catat_logframe
 )
-from constants import SHEET_KEY, JSON_PATH, SHEET_NAMES
+from constants import SHEET_KEY, SHEET_NAMES
 def run():
     @st.cache_data(ttl=300)
     def load_data():
-        df_frame = get_dataframe(SHEET_KEY, JSON_PATH, SHEET_NAMES['dframe'])
-        df_lensa_stock = get_dataframe(SHEET_KEY, JSON_PATH, SHEET_NAMES['dlensa'])
-        df_lensa_luar = get_dataframe(SHEET_KEY, JSON_PATH, SHEET_NAMES['lensa_luar_stock'])
+        df_frame = get_dataframe(SHEET_KEY, SHEET_NAMES['dframe'])
+        df_lensa_stock = get_dataframe(SHEET_KEY, SHEET_NAMES['dlensa'])
+        df_lensa_luar = get_dataframe(SHEET_KEY, SHEET_NAMES['lensa_luar_stock'])
 
         for df in (df_frame, df_lensa_stock):
             for col in ['Harga Jual', 'Harga Modal']:
@@ -31,8 +31,7 @@ def run():
     
     import gspread
     from google.oauth2.service_account import Credentials
-    creds = Credentials.from_service_account_file(JSON_PATH)
-    client = authorize_gspread(JSON_PATH)  # sudah ada scopes-nya
+    client = authorize_gspread()
     worksheet = client.open_by_key(SHEET_KEY).worksheet(SHEET_NAMES['dframe'])
 
     st.title("🧾 Transaksi Kasir")
@@ -48,7 +47,7 @@ def run():
 
     nama = str(nama).strip().lower()
     kontak = str(kontak).strip()
-    id_pelanggan = get_or_create_pelanggan_id(SHEET_KEY, JSON_PATH, SHEET_NAMES['pelanggan'], nama, kontak)
+    id_pelanggan = get_or_create_pelanggan_id(SHEET_KEY, SHEET_NAMES['pelanggan'], nama, kontak)
 
     if "daftar_item" not in st.session_state:
         st.session_state.daftar_item = []
@@ -226,8 +225,8 @@ def run():
             st.success(f"Kembalian: Rp {sisa:,.0f}")
 
         if st.button("💾 Simpan Pembayaran"):
-            id_transaksi = generate_id_transaksi(SHEET_KEY, JSON_PATH, SHEET_NAMES['transaksi'], tanggal_transaksi)
-            id_pembayaran = generate_id_pembayaran(SHEET_KEY, JSON_PATH, SHEET_NAMES['pembayaran'], tanggal_transaksi)
+            id_transaksi = generate_id_transaksi(SHEET_KEY, SHEET_NAMES['transaksi'], tanggal_transaksi)
+            id_pembayaran = generate_id_pembayaran(SHEET_KEY, SHEET_NAMES['pembayaran'], tanggal_transaksi)
             user = st.session_state.get("user", "Unknown")
 
             for item in st.session_state.daftar_item:
@@ -237,13 +236,12 @@ def run():
                     item['sph_r'], item['cyl_r'], item['axis_r'], item['add_r'],
                     item['sph_l'], item['cyl_l'], item['axis_l'], item['add_l'],
                     item['harga_frame'], item['harga_lensa'], int(item['diskon']), int(item['subtotal']), user]
-                append_row(SHEET_KEY, JSON_PATH, SHEET_NAMES['transaksi'], [str(x) for x in row])
+                append_row(SHEET_KEY, SHEET_NAMES['transaksi'], [str(x) for x in row])
                 
                 # Catat log frame
                 if item['status_frame'] == "Stock":
                     catat_logframe(
                         sheet_key=SHEET_KEY,
-                        json_path=JSON_PATH,
                         merk=item['merk_frame'],
                         kode=item['kode_frame'],
                         source="kasir",
@@ -268,7 +266,7 @@ def run():
                         worksheet.update_cell(row_excel, df_frame.columns.get_loc("Stock") + 1, stock_baru)
                         df_frame.at[idx, 'Stock'] = stock_baru
 
-            df_pembayaran = get_dataframe(SHEET_KEY, JSON_PATH, SHEET_NAMES['pembayaran'])
+            df_pembayaran = get_dataframe(SHEET_KEY, SHEET_NAMES['pembayaran'])
             pembayaran_ke = df_pembayaran[df_pembayaran['ID Transaksi'] == id_transaksi].shape[0] + 1
 
             pembayaran_data = [
@@ -277,7 +275,7 @@ def run():
                 str(int(harga_final)), str(int(nominal)), str(int(sisa)), status,
                 str(pembayaran_ke), user
             ]
-            append_row(SHEET_KEY, JSON_PATH, SHEET_NAMES['pembayaran'], pembayaran_data)
+            append_row(SHEET_KEY, SHEET_NAMES['pembayaran'], pembayaran_data)
 
             st.cache_data.clear()
             st.session_state['ringkasan_tersimpan'] = {

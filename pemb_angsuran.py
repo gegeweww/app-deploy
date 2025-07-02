@@ -3,12 +3,12 @@ import pandas as pd
 import re
 from datetime import datetime
 from utils import get_dataframe, append_row, generate_id_pembayaran
-from constants import SHEET_KEY, JSON_PATH, SHEET_NAMES
+from constants import SHEET_KEY, SHEET_NAMES
 
 @st.cache_data(ttl=300)
 def load_data():
-    df_pembayaran = get_dataframe(SHEET_KEY, JSON_PATH, SHEET_NAMES['pembayaran'])
-    df_transaksi = get_dataframe(SHEET_KEY, JSON_PATH, SHEET_NAMES['transaksi'])
+    df_pembayaran = get_dataframe(SHEET_KEY, SHEET_NAMES['pembayaran'])
+    df_transaksi = get_dataframe(SHEET_KEY, SHEET_NAMES['transaksi'])
     return df_pembayaran, df_transaksi
 
 def run():
@@ -97,7 +97,7 @@ def run():
                 status_baru = "Lunas" if sisa_baru >= 0 else "Belum Lunas"
 
                 tanggal_hari_ini = datetime.today().strftime("%Y-%m-%d")
-                id_pembayaran_baru = generate_id_pembayaran(SHEET_KEY, JSON_PATH, SHEET_NAMES['pembayaran'], datetime.today())
+                id_pembayaran_baru = generate_id_pembayaran(SHEET_KEY, SHEET_NAMES['pembayaran'], datetime.today())
                 user = st.session_state.get("user", "Unknown")
 
                 pembayaran_ke = df_all.shape[0] + 1
@@ -108,7 +108,7 @@ def run():
                     str(int(total)), str(int(bayar)), str(int(sisa_baru)), status_baru,
                     str(pembayaran_ke), user
                 ]
-                append_row(SHEET_KEY, JSON_PATH, SHEET_NAMES['pembayaran'], new_row)
+                append_row(SHEET_KEY, SHEET_NAMES['pembayaran'], new_row)
 
 
                 st.session_state['pembayaran_berhasil'] = {

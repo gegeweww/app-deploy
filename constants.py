@@ -1,8 +1,6 @@
 # constants.py
 
 SHEET_KEY = '102fJKbi3GAqZ0wjyHAH3L-gj5O_jjLcVcl93PDjfrOU'
-JSON_PATH = 'D:/LEARN WHATEVER YOU WANT/APLIKASI PENJUALAN/app deploy/metal-filament-457905-i2-0e50ac501de4.json'
-
 SHEET_NAMES = {
     'dframe': 'MFrame1',
     'dlensa': 'MLensa',

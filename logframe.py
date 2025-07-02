@@ -1,13 +1,13 @@
 
 from utils import get_dataframe
-from constants import SHEET_KEY, JSON_PATH, SHEET_NAMES
+from constants import SHEET_KEY, SHEET_NAMES
 import streamlit as st
 
 def run():
     @st.cache_data(ttl=300)
     def show_data():
-        return get_dataframe(SHEET_KEY, JSON_PATH, SHEET_NAMES["logframe"])
-    
+        return get_dataframe(SHEET_KEY, SHEET_NAMES["logframe"])
+
     st.title("📋 Log Aktivitas Frame")
     st.write("Menampilkan seluruh log aktivitas untuk produk Frame.")
 

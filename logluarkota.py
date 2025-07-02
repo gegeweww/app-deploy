@@ -2,12 +2,12 @@ import streamlit as st
 import pandas as pd
 from datetime import datetime
 from utils import get_dataframe
-from constants import SHEET_KEY, JSON_PATH, SHEET_NAMES
+from constants import SHEET_KEY, SHEET_NAMES
 
 @st.cache_data(ttl=300)
 def load_data():
-    df_log = get_dataframe(SHEET_KEY, JSON_PATH, SHEET_NAMES['pesanan_luar_kota'])
-    df_pembayaran = get_dataframe(SHEET_KEY, JSON_PATH, SHEET_NAMES['pembayaran_luar_kota'])
+    df_log = get_dataframe(SHEET_KEY, SHEET_NAMES['pesanan_luar_kota'])
+    df_pembayaran = get_dataframe(SHEET_KEY, SHEET_NAMES['pembayaran_luar_kota'])
     return df_log, df_pembayaran
 
 def run():

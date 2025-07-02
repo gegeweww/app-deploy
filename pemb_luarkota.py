@@ -3,12 +3,12 @@ import pandas as pd
 import re
 from datetime import datetime
 from utils import get_dataframe, append_row, generate_id_pembayaran, generate_id_pemb_skw
-from constants import SHEET_KEY, JSON_PATH, SHEET_NAMES
+from constants import SHEET_KEY, SHEET_NAMES
 
 @st.cache_data(ttl=300)
 def load_data():
-    df_pembayaran = get_dataframe(SHEET_KEY, JSON_PATH, SHEET_NAMES['pembayaran_luar_kota'])
-    df_pesanan = get_dataframe(SHEET_KEY, JSON_PATH, SHEET_NAMES['pesanan_luar_kota'])
+    df_pembayaran = get_dataframe(SHEET_KEY, SHEET_NAMES['pembayaran_luar_kota'])
+    df_pesanan = get_dataframe(SHEET_KEY, SHEET_NAMES['pesanan_luar_kota'])
     return df_pembayaran, df_pesanan
 
 def run():
@@ -99,14 +99,14 @@ def run():
                 ke = df_all.shape[0] + 1
                 user = st.session_state.get("user", "Unknown")
 
-                id_pembayaran_baru = generate_id_pemb_skw(SHEET_KEY, JSON_PATH, SHEET_NAMES['pembayaran_luar_kota'], nama, tanggal)
+                id_pembayaran_baru = generate_id_pemb_skw(SHEET_KEY, SHEET_NAMES['pembayaran_luar_kota'], nama, tanggal)
 
                 new_row = [
                     timestamp, tanggal, id_transaksi, id_pembayaran_baru,
                     nama, row['metode'], via, int(total), int(bayar),
                     int(sisa_baru), ke, tanggal_bayar, status_baru, user
                 ]
-                append_row(SHEET_KEY, JSON_PATH, SHEET_NAMES['pembayaran_luar_kota'], [str(x) for x in new_row])
+                append_row(SHEET_KEY, SHEET_NAMES['pembayaran_luar_kota'], [str(x) for x in new_row])
 
                 st.session_state['pembayaran_luar_berhasil'] = {
                     'id': id_transaksi,

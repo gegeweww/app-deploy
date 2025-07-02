@@ -6,14 +6,14 @@ from utils import (
     cari_harga_lensa_luar, cari_harga_lensa_stock,
     generate_id_skw, generate_id_pemb_skw
 )
-from constants import SHEET_KEY, JSON_PATH, SHEET_NAMES
+from constants import SHEET_KEY, SHEET_NAMES
 
 def run():
     @st.cache_data(ttl=300)
     def load_data():
-        df_frame = get_dataframe(SHEET_KEY, JSON_PATH, SHEET_NAMES['dframe'])
-        df_lensa_stock = get_dataframe(SHEET_KEY, JSON_PATH, SHEET_NAMES['dlensa'])
-        df_lensa_luar = get_dataframe(SHEET_KEY, JSON_PATH, SHEET_NAMES['lensa_luar_stock'])
+        df_frame = get_dataframe(SHEET_KEY, SHEET_NAMES['dframe'])
+        df_lensa_stock = get_dataframe(SHEET_KEY, SHEET_NAMES['dlensa'])
+        df_lensa_luar = get_dataframe(SHEET_KEY, SHEET_NAMES['lensa_luar_stock'])
 
         for df in (df_frame, df_lensa_stock):
             for col in ['Harga Jual', 'Harga Modal']:
@@ -178,8 +178,8 @@ def run():
                     return
 
                 tanggal_display = datetime.strptime(tanggal_ambil, "%d-%m-%Y").strftime('%d-%m-%Y')
-                id_transaksi = generate_id_skw(SHEET_KEY, JSON_PATH, SHEET_NAMES['pesanan_luar_kota'], nama, tanggal_ambil)
-                id_pembayaran = generate_id_pemb_skw(SHEET_KEY, JSON_PATH, SHEET_NAMES['pesanan_luar_kota'], nama, tanggal_ambil)
+                id_transaksi = generate_id_skw(SHEET_KEY, SHEET_NAMES['pesanan_luar_kota'], nama, tanggal_ambil)
+                id_pembayaran = generate_id_pemb_skw(SHEET_KEY, SHEET_NAMES['pesanan_luar_kota'], nama, tanggal_ambil)
                 user = st.session_state.get("user", "Unknown")
 
                 for item in st.session_state.daftar_item_luar:
@@ -194,9 +194,9 @@ def run():
                         item['harga_lensa'], item['diskon'], item['potong'], item['ongkir'],
                         item['keterangan'], item['harga_final'] + item['potong'] + item['ongkir'], user
                     ]
-                    append_row(SHEET_KEY, JSON_PATH, SHEET_NAMES['pesanan_luar_kota'], [str(x) for x in row])
+                    append_row(SHEET_KEY, SHEET_NAMES['pesanan_luar_kota'], [str(x) for x in row])
 
-                df_pembayaran = get_dataframe(SHEET_KEY, JSON_PATH, SHEET_NAMES['pembayaran_luar_kota'])
+                df_pembayaran = get_dataframe(SHEET_KEY, SHEET_NAMES['pembayaran_luar_kota'])
                 df_pembayaran.columns = df_pembayaran.columns.str.strip().str.lower().str.replace(" ", "_")
                 pembayaran_ke = df_pembayaran[df_pembayaran['id_transaksi'] == id_transaksi].shape[0] + 1
 
@@ -204,7 +204,7 @@ def run():
                     today, tanggal_ambil, id_transaksi, id_pembayaran, nama, metode, via,
                     int(total), int(nominal), int(sisa), pembayaran_ke, tanggal_bayar, status, user
                 ]
-                append_row(SHEET_KEY, JSON_PATH, SHEET_NAMES['pembayaran_luar_kota'], [str(x) for x in pembayaran_data])
+                append_row(SHEET_KEY, SHEET_NAMES['pembayaran_luar_kota'], [str(x) for x in pembayaran_data])
 
                 st.session_state['sudah_submit_luar'] = True
                 st.session_state['ringkasan_luar'] = {
