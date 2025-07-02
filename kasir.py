@@ -4,7 +4,7 @@ from datetime import datetime, date
 from utils import (
     get_dataframe, append_row,
     get_or_create_pelanggan_id, generate_id_transaksi, generate_id_pembayaran,
-    cari_harga_lensa_luar, cari_harga_lensa_stock
+    cari_harga_lensa_luar, cari_harga_lensa_stock, catat_logframe
 )
 from constants import SHEET_KEY, JSON_PATH, SHEET_NAMES
 def run():
@@ -232,6 +232,20 @@ def run():
                     item['sph_l'], item['cyl_l'], item['axis_l'], item['add_l'],
                     item['harga_frame'], item['harga_lensa'], int(item['diskon']), int(item['subtotal']), user]
                 append_row(SHEET_KEY, JSON_PATH, SHEET_NAMES['transaksi'], [str(x) for x in row])
+                
+                # Catat log frame
+                if item['status_frame'] == "Stock":
+                    catat_logframe(
+                        sheet_key=SHEET_KEY,
+                        json_path=JSON_PATH,
+                        merk=item['merk_frame'],
+                        kode=item['kode_frame'],
+                        source="kasir",
+                        status_frame=item['status_frame'],
+                        id_transaksi=id_transaksi,
+                        nama=nama,
+                        user=user
+                    )                
 
             df_pembayaran = get_dataframe(SHEET_KEY, JSON_PATH, SHEET_NAMES['pembayaran'])
             pembayaran_ke = df_pembayaran[df_pembayaran['ID Transaksi'] == id_transaksi].shape[0] + 1
@@ -245,7 +259,6 @@ def run():
             append_row(SHEET_KEY, JSON_PATH, SHEET_NAMES['pembayaran'], pembayaran_data)
 
             st.cache_data.clear()
-
             st.session_state['ringkasan_tersimpan'] = {
                 'id_transaksi': id_transaksi,
                 'tanggal': today,
@@ -269,3 +282,4 @@ def run():
             if st.button("OK"):
                 st.session_state.pop("ringkasan_tersimpan", None)
                 st.rerun()
+
