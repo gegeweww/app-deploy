@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd
 from datetime import datetime, date
 from utils import (
-    get_dataframe, append_row,
+    authorize_gspread, get_dataframe, append_row,
     get_or_create_pelanggan_id, generate_id_transaksi, generate_id_pembayaran,
     cari_harga_lensa_luar, cari_harga_lensa_stock, catat_logframe
 )
@@ -28,6 +28,12 @@ def run():
         return df_frame, df_lensa_stock, df_lensa_luar
 
     df_frame, df_lensa_stock, df_lensa_luar = load_data()
+    
+    import gspread
+    from google.oauth2.service_account import Credentials
+    creds = Credentials.from_service_account_file(JSON_PATH)
+    client = authorize_gspread(JSON_PATH)  # sudah ada scopes-nya
+    worksheet = client.open_by_key(SHEET_KEY).worksheet(SHEET_NAMES['dframe'])
 
     st.title("🧾 Transaksi Kasir")
     today = datetime.today().strftime("%Y-%m-%d,%H:%M:%S")
@@ -246,6 +252,21 @@ def run():
                         nama=nama,
                         user=user
                     )                
+                
+                # Kurangi Stock Frame
+                if item['status_frame'] == "Stock":
+                    kondisi = (
+                        (df_frame['Merk'] == item['merk_frame']) &
+                        (df_frame['Kode'] == item['kode_frame'])
+                    )
+
+                    if kondisi.any():
+                        idx = kondisi.idxmax()
+                        row_excel = idx + 2
+                        stock_lama = int(str(df_frame.at[idx, 'Stock']).replace(",", "").strip())
+                        stock_baru = max(0, stock_lama - 1)
+                        worksheet.update_cell(row_excel, df_frame.columns.get_loc("Stock") + 1, stock_baru)
+                        df_frame.at[idx, 'Stock'] = stock_baru
 
             df_pembayaran = get_dataframe(SHEET_KEY, JSON_PATH, SHEET_NAMES['pembayaran'])
             pembayaran_ke = df_pembayaran[df_pembayaran['ID Transaksi'] == id_transaksi].shape[0] + 1
