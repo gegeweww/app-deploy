@@ -242,6 +242,7 @@ def run():
                 if item['status_frame'] == "Stock":
                     catat_logframe(
                         sheet_key=SHEET_KEY,
+                        sheet_name="log_frame",
                         merk=item['merk_frame'],
                         kode=item['kode_frame'],
                         source="kasir",
