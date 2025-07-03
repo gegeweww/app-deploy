@@ -12,7 +12,6 @@ import luarkota
 import pemb_luarkota
 import logluarkota
 
-st.write(st.secrets["gcp_service_account"])
 def show_menu():
     st.sidebar.title("📦 Navigasi")
     st.sidebar.title(f"👋 Hai, {st.session_state['user']}")
