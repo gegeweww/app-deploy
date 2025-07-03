@@ -3,7 +3,8 @@ from datetime import datetime
 from constants import SHEET_KEY, SHEET_NAMES
 from utils import (
     authorize_gspread, get_dataframe,
-    append_row, buat_logframe_status, catat_logframe
+    append_row, buat_logframe_status, catat_logframe,
+    sort_sheet
 )
 
 def run():
@@ -82,7 +83,7 @@ def run():
             frame_data = [selected_merk, selected_kode, distributor, harga_modal, harga_jual, stock_baru]
             append_row(SHEET_KEY, SHEET_NAMES['dframe'], frame_data)
             sheet = client.open_by_key(SHEET_KEY).worksheet(SHEET_NAMES["dframe"])
-            sheet.sort((1, 'asc'), range='A2:F')  # Sort by column 1 (Merk) A-Z
+            sort_sheet(sheet, col=1, last_col='F')  # Sort by column 1 (Merk) A-Z
 
             with st.expander("📦 Stock baru berhasil ditambahkan"):
                 st.markdown(f"""
@@ -122,7 +123,7 @@ def run():
             frame_data = [selected_merk, selected_kode, distributor, harga_modal, harga_jual, stock_baru]
             append_row(SHEET_KEY, SHEET_NAMES['dframe'], frame_data)
             sheet = client.open_by_key(SHEET_KEY).worksheet(SHEET_NAMES["dframe"])
-            sheet.sort((1, 'asc'))  # Sort by column 1 (Merk) A-Z
+            sort_sheet(sheet, col=1, last_col='F')  # Sort by column 1 (Merk) A-Z
             
             with st.expander("📦 Kode baru berhasil ditambahkan"):
                 st.markdown(f"""

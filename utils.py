@@ -57,6 +57,12 @@ def append_row(sheet_key, sheet_name, row_data):
     sheet = client.open_by_key(sheet_key).worksheet(sheet_name)
     sheet.append_row(row_data)
 
+# Sort Data Frame (A-Z)
+def sort_sheet(sheet, col=1, last_col='F'):
+    values = sheet.get_all_values()
+    total_rows = len(values)
+    sheet.sort((col, 'asc'), range=f"A2:{last_col}{total_rows}")
+
 # Buat atau cek id pelanggan
 def get_or_create_pelanggan_id(sheet_key, sheet_name, nama, no_hp):
     df = get_dataframe(sheet_key, sheet_name)
