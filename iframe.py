@@ -6,7 +6,6 @@ from utils import (
     append_row, buat_logframe_status, catat_logframe
 )
 
-
 def run():
     user = st.session_state["user"]
     client = authorize_gspread()
@@ -55,6 +54,7 @@ def run():
 
                     catat_logframe(
                         sheet_key=SHEET_KEY,
+                        sheet_name=SHEET_NAMES["logframe"],
                         merk=selected_merk,
                         kode=selected_kode,
                         source="iframe",
@@ -96,6 +96,7 @@ def run():
 
             catat_logframe(
                 sheet_key=SHEET_KEY,
+                sheet_name=SHEET_NAMES["logframe"],
                 merk=selected_merk,
                 kode=selected_kode,
                 source="iframe",
@@ -135,6 +136,7 @@ def run():
 
             catat_logframe(
                 sheet_key=SHEET_KEY,
+                sheet_name=SHEET_NAMES["logframe"],
                 merk=selected_merk,
                 kode=selected_kode,
                 source="iframe",
