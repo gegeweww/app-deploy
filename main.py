@@ -3,7 +3,7 @@ from menu import show_menu
 from constants import USERS
 from utils import set_font
 
-st.set_page_config(page_title="Optik Maroon Pontianak", layout="centered")
+st.set_page_config(page_title="Optik Maroon Pontianak", layout="centered", initial_sidebar_state="expanded")
 set_font()
 
 def pilih_user():
