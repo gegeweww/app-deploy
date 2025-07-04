@@ -13,6 +13,13 @@ import pemb_luarkota
 import logluarkota
 
 def show_menu():
+    st.markdown("""
+        <style>
+        body {
+            background-color: red;
+        }
+        </style>
+    """, unsafe_allow_html=True)
     st.sidebar.title("📦 Navigasi")
     st.sidebar.title(f"👋 Hai, {st.session_state['user']}")
     
