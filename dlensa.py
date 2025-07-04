@@ -56,16 +56,16 @@ def run():
         st.download_button("⬇️ Download seluruh data (.csv)", data=csv, file_name='database_lensa.csv', mime='text/csv')
     else:
         display_df_with_index_start_1(df)
-        tampilkan_stok_rendah = st.checkbox("🔍 Tampilkan hanya lensa dengan stok ≤ 1")
+        tampilkan_stock_rendah = st.checkbox("🔍 Tampilkan hanya lensa dengan stock ≤ 1")
 
-    if tampilkan_stok_rendah:
-        df_stok_rendah = df[df['Stok'] <= 1]
-        if not df_stok_rendah.empty:
-            st.warning(f"Ditemukan {len(df_stok_rendah)} lensa dengan stok ≤ 1")
-            display_df_with_index_start_1(df_stok_rendah)
+    if tampilkan_stock_rendah:
+        df_stock_rendah = df[df['Stock'] <= 1]
+        if not df_stock_rendah.empty:
+            st.warning(f"Ditemukan {len(df_stock_rendah)} lensa dengan stock ≤ 1")
+            display_df_with_index_start_1(df_stock_rendah)
 
-            csv_stok = df_stok_rendah.to_csv(index=False).encode('utf-8')
-            st.download_button("⬇️ Download lensa stok rendah (.csv)", data=csv_stok, file_name='stok_lensa_rendah.csv', mime='text/csv')
+            csv_stock = df_stock_rendah.to_csv(index=False).encode('utf-8')
+            st.download_button("⬇️ Download lensa stock rendah (.csv)", data=csv_stock, file_name='stock_lensa_rendah.csv', mime='text/csv')
         else:
-            st.success("Semua stok lensa aman 👍")
+            st.success("Semua stock lensa aman 👍")
         st.stop()  # ⛔ Ini penting supaya tidak lanjut ke bagian bawah
