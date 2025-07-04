@@ -5,6 +5,13 @@ from utils import set_font
 
 st.set_page_config(page_title="Optik Maroon Pontianak", layout="centered")
 set_font()
+st.markdown("""
+    <style>
+    [data-testid="collapsedControl"] {
+        display: none;
+    }
+    </style>
+""", unsafe_allow_html=True)
 
 def pilih_user():
     st.title("Optik Maroon Pontianak")
