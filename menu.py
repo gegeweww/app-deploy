@@ -1,5 +1,4 @@
 import streamlit as st
-from utils import inject_hide_sidebar_icon
 
 # Impor halaman modul
 import dframe
@@ -14,8 +13,6 @@ import pemb_luarkota
 import logluarkota
 
 def show_menu():
-    inject_hide_sidebar_icon()
-
     st.sidebar.title("📦 Navigasi")
     st.sidebar.title(f"👋 Hai, {st.session_state['user']}")
     
