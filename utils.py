@@ -16,21 +16,6 @@ def set_font():
         </style>
     """, unsafe_allow_html=True)
 
-# Inject CSS untuk menyembunyikan ikon sidebar
-def inject_hide_sidebar_icon():
-    import streamlit as st
-    st.markdown("""
-        <style>
-        [data-testid="collapsedControl"] {
-            visibility: hidden !important;
-            height: 0px !important;
-            width: 0px !important;
-            position: absolute !important;
-        }
-        </style>
-    """, unsafe_allow_html=True)
-
-
 # Autentikasi dan akses Google Sheet
 def authorize_gspread():
     credentials = Credentials.from_service_account_info(
