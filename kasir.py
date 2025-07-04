@@ -36,9 +36,9 @@ def run():
     worksheet = client.open_by_key(SHEET_KEY).worksheet(SHEET_NAMES['dframe'])
 
     st.title("🧾 Transaksi Kasir")
-    today = datetime.now(ZoneInfo("Asia/Jakarta")).strftime("%Y-%m-%d,%H:%M:%S")
+    today = datetime.now(ZoneInfo("Asia/Jakarta")).strftime("%d-%m-%Y,%H:%M:%S")
     tanggal_transaksi = st.date_input("📅 Tanggal Transaksi", value=date.today(), format="DD/MM/YYYY")
-    tanggal_str = tanggal_transaksi.strftime("%Y-%m-%d")
+    tanggal_str = tanggal_transaksi.strftime("%d-%m-%Y")
 
     nama = st.text_input("Nama Konsumen")
     kontak = st.text_input("No HP")
