@@ -54,7 +54,7 @@ def run():
                      'user']
     df_ringkas = df_ringkas[[col for col in selected_cols if col in df_ringkas.columns]]
 
-    df_ringkas['tanggal'] = pd.to_datetime(df_ringkas['tanggal'], format="%d-%m-%Y, %H:%M:%S", errors='coerce')
+    df_ringkas['tanggal'] = pd.to_datetime(df_ringkas['tanggal'], errors='coerce')
     df_ringkas = df_ringkas.dropna(subset=['tanggal'])
     df_ringkas['bulan'] = df_ringkas['tanggal'].dt.strftime('%B %Y')
 
