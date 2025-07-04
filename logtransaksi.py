@@ -72,6 +72,6 @@ def run():
     search_nama = st.text_input("🔍 Cari Nama Pelanggan")
     if search_nama:
         df_filtered = df_filtered[df_filtered['nama'].str.contains(search_nama, case=False, na=False)]
-
+    df_filtered['tanggal'] = df_filtered['tanggal'].dt.strftime('%d-%m-%y, %H:%M:%S')
     st.dataframe(df_filtered.drop(columns=['bulan'], errors='ignore').reset_index(drop=True), use_container_width=True)
 

@@ -220,6 +220,11 @@ def run():
 
             except Exception as e:
                 st.error(f"Terjadi kesalahan saat menyimpan: {e}")
+            
+        if st.button("🔄 Reset Semua Item"):
+            del st.session_state.daftar_item_luar
+            st.success("Daftar item berhasil direset!")
+            st.rerun()
 
     if 'ringkasan_luar' in st.session_state:
         data = st.session_state['ringkasan_luar']
@@ -229,7 +234,7 @@ def run():
             **Id Transaksi:** {data.get('id_transaksi', '-')}  
             **Nama:** {data['nama']}  
             **Status:** {data['status']}  
-            **Sisa/Kembalian:** Rp {data['sisa']:,.0f}log
+            **Sisa/Kembalian:** Rp {data['sisa']:,.0f}
             """)
             if st.button("OK"):
                 st.session_state.pop("ringkasan_luar", None)
