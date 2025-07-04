@@ -36,7 +36,7 @@ def run():
     worksheet = client.open_by_key(SHEET_KEY).worksheet(SHEET_NAMES['dframe'])
 
     st.title("🧾 Transaksi Kasir")
-    today = datetime.today(ZoneInfo("Asia/Jakarta")).strftime("%Y-%m-%d,%H:%M:%S")
+    today = datetime.now(ZoneInfo("Asia/Jakarta")).strftime("%Y-%m-%d,%H:%M:%S")
     tanggal_transaksi = st.date_input("📅 Tanggal Transaksi", value=date.today(), format="DD/MM/YYYY")
     tanggal_str = tanggal_transaksi.strftime("%Y-%m-%d")
 

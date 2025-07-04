@@ -63,7 +63,7 @@ def run():
         tanggal = str(row['tanggal']).strip()
 
         if "\n" in tanggal or "Name:" in tanggal or "tanggal" in tanggal:
-            tanggal = datetime.today(ZoneInfo("Asia/Jakarta")).strftime("%Y-%m-%d")
+            tanggal = datetime.now(ZoneInfo("Asia/Jakarta")).strftime("%Y-%m-%d")
 
         df_item = df_transaksi[df_transaksi['id_transaksi'] == id_transaksi]
         items = df_item[['merk_frame', 'merk_lensa', 'jenis_lensa']].fillna('-').astype(str)
@@ -97,8 +97,8 @@ def run():
                 sisa_baru = round(total_terbayar - total, 2)
                 status_baru = "Lunas" if sisa_baru >= 0 else "Belum Lunas"
 
-                tanggal_hari_ini = datetime.today(ZoneInfo("Asia/Jakarta")).strftime("%Y-%m-%d")
-                id_pembayaran_baru = generate_id_pembayaran(SHEET_KEY, SHEET_NAMES['pembayaran'], datetime.today(ZoneInfo("Asia/Jakarta")))
+                tanggal_hari_ini = datetime.now(ZoneInfo("Asia/Jakarta")).strftime("%Y-%m-%d")
+                id_pembayaran_baru = generate_id_pembayaran(SHEET_KEY, SHEET_NAMES['pembayaran'], datetime.now(ZoneInfo("Asia/Jakarta")))
                 user = st.session_state.get("user", "Unknown")
 
                 pembayaran_ke = df_all.shape[0] + 1

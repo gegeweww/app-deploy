@@ -25,7 +25,7 @@ def run():
     # UI Streamlit
     st.title('➕ Input / Edit Stock Frame')
     st.write('Tambahkan atau ubah stock dari frame yang tersedia')
-    today = datetime.today(ZoneInfo("Asia/Jakarta")).strftime("%Y-%m-%d,%H:%M:%S")
+    today = datetime.now(ZoneInfo("Asia/Jakarta")).strftime("%Y-%m-%d,%H:%M:%S")
     user = st.session_state.get("user", "Unknown")
 
     # Mode

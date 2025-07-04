@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
 from datetime import datetime, date
+from zoneinfo import ZoneInfo
 from utils import (
     get_dataframe, append_row,
     cari_harga_lensa_luar, cari_harga_lensa_stock,
@@ -30,7 +31,7 @@ def run():
     df_frame, df_lensa_stock, df_lensa_luar = load_data()
 
     st.title("📦 Pesanan Luar Kota")
-    today = datetime.today().strftime("%d-%m-%Y, %H:%M:%S")
+    today = datetime.now(ZoneInfo("Asia/Jakarta")).strftime("%d-%m-%Y, %H:%M:%S")
     colL, colR = st.columns(2)
     with colL:
         tanggal_ambil = st.date_input("📅 Tanggal Ambil", value=date.today(), format="DD/MM/YYYY")
