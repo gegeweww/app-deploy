@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
 from datetime import datetime, date
+from zoneinfo import ZoneInfo
 from utils import (
     authorize_gspread, get_dataframe, append_row,
     get_or_create_pelanggan_id, generate_id_transaksi, generate_id_pembayaran,
@@ -35,7 +36,7 @@ def run():
     worksheet = client.open_by_key(SHEET_KEY).worksheet(SHEET_NAMES['dframe'])
 
     st.title("🧾 Transaksi Kasir")
-    today = datetime.today().strftime("%Y-%m-%d,%H:%M:%S")
+    today = datetime.today(ZoneInfo("Asia/Jakarta")).strftime("%Y-%m-%d,%H:%M:%S")
     tanggal_transaksi = st.date_input("📅 Tanggal Transaksi", value=date.today(), format="DD/MM/YYYY")
     tanggal_str = tanggal_transaksi.strftime("%Y-%m-%d")
 

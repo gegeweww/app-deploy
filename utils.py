@@ -3,6 +3,7 @@ import pandas as pd
 from google.oauth2.service_account import Credentials
 from constants import SHEET_NAMES
 import streamlit as st
+from zoneinfo import ZoneInfo
 
 # Font
 def set_font():
@@ -284,6 +285,6 @@ def catat_logframe(sheet_key, sheet_name, merk, kode, source, mode=None, status_
     )
 
     if status_log and keterangan:
-        timestamp = datetime.now().strftime("%d-%m-%Y %H:%M:%S")
+        timestamp = datetime.now(ZoneInfo("Asia/Jakarta")).strftime("%d-%m-%Y %H:%M:%S")
         row = [timestamp, merk, kode, status_log, keterangan, user]
         append_row(sheet_key, sheet_name, row)
