@@ -57,6 +57,7 @@ def run():
     df_ringkas['tanggal'] = pd.to_datetime(df_ringkas['tanggal'], dayfirst=True, errors='coerce')
     df_ringkas = df_ringkas.dropna(subset=['tanggal'])
     df_ringkas['bulan'] = df_ringkas['tanggal'].dt.strftime('%B %Y')
+    df_ringkas['tanggal'] = df_ringkas['tanggal'].dt.strftime('%d-%m-%Y')
 
     # Filter berdasarkan bulan dan nama
     bulan_tersedia = df_ringkas['bulan'].dropna().unique()
@@ -75,4 +76,3 @@ def run():
     if not df_filtered.empty:
         df_filtered['tanggal'] = df_filtered['tanggal']
     st.dataframe(df_filtered.drop(columns=['bulan'], errors='ignore').reset_index(drop=True), use_container_width=True)
-
