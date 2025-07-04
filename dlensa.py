@@ -1,4 +1,5 @@
 import streamlit as st
+import pandas as pd
 from utils import get_dataframe
 from constants import SHEET_KEY, SHEET_NAMES
 
@@ -59,6 +60,7 @@ def run():
         tampilkan_stock_rendah = st.checkbox("🔍 Tampilkan hanya lensa dengan stock ≤ 1")
 
     if tampilkan_stock_rendah:
+        df['Stock'] = pd.to_numeric(df['Stock'], errors='coerce')  # Paksa jadi angka
         df_stock_rendah = df[df['Stock'] <= 1]
         if not df_stock_rendah.empty:
             st.warning(f"Ditemukan {len(df_stock_rendah)} lensa dengan stock ≤ 1")
