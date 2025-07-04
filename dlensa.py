@@ -56,3 +56,16 @@ def run():
         st.download_button("⬇️ Download seluruh data (.csv)", data=csv, file_name='database_lensa.csv', mime='text/csv')
     else:
         display_df_with_index_start_1(df)
+        tampilkan_stok_rendah = st.checkbox("🔍 Tampilkan hanya lensa dengan stok ≤ 1")
+
+    if tampilkan_stok_rendah:
+        df_stok_rendah = df[df['Stok'] <= 1]
+        if not df_stok_rendah.empty:
+            st.warning(f"Ditemukan {len(df_stok_rendah)} lensa dengan stok ≤ 1")
+            display_df_with_index_start_1(df_stok_rendah)
+
+            csv_stok = df_stok_rendah.to_csv(index=False).encode('utf-8')
+            st.download_button("⬇️ Download lensa stok rendah (.csv)", data=csv_stok, file_name='stok_lensa_rendah.csv', mime='text/csv')
+        else:
+            st.success("Semua stok lensa aman 👍")
+        st.stop()  # ⛔ Ini penting supaya tidak lanjut ke bagian bawah
