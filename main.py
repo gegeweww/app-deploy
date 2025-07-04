@@ -7,8 +7,8 @@ st.set_page_config(page_title="Optik Maroon Pontianak", layout="centered")
 set_font()
 st.markdown("""
     <style>
-    [data-testid="collapsedControl"] {
-        display: none !important;
+    body {
+        background-color: red;
     }
     </style>
 """, unsafe_allow_html=True)
