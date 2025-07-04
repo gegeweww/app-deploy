@@ -54,7 +54,7 @@ def run():
                      'user']
     df_ringkas = df_ringkas[[col for col in selected_cols if col in df_ringkas.columns]]
 
-    df_ringkas['tanggal'] = pd.to_datetime(df_ringkas['tanggal'], errors='coerce')
+    df_ringkas['tanggal'] = pd.to_datetime(df_ringkas['tanggal'], dayfirst=True, errors='coerce')
     df_ringkas = df_ringkas.dropna(subset=['tanggal'])
     df_ringkas['bulan'] = df_ringkas['tanggal'].dt.strftime('%B %Y')
 
@@ -73,6 +73,6 @@ def run():
     if search_nama:
         df_filtered = df_filtered[df_filtered['nama'].str.contains(search_nama, case=False, na=False)]
     if not df_filtered.empty:
-        df_filtered['tanggal'] = df_filtered['tanggal'].dt.strftime('%d-%m-%y, %H:%M:%S')
+        df_filtered['tanggal'] = df_filtered['tanggal']
     st.dataframe(df_filtered.drop(columns=['bulan'], errors='ignore').reset_index(drop=True), use_container_width=True)
 
