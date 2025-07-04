@@ -8,7 +8,7 @@ set_font()
 st.markdown("""
     <style>
     [data-testid="collapsedControl"] {
-        display: none;
+        display: none !important;
     }
     </style>
 """, unsafe_allow_html=True)
