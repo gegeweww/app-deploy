@@ -4,9 +4,10 @@ from datetime import datetime, date
 from utils import (
     authorize_gspread, get_dataframe, append_row,
     get_or_create_pelanggan_id, generate_id_transaksi, generate_id_pembayaran,
-    cari_harga_lensa_luar, cari_harga_lensa_stock, catat_logframe
+    cari_harga_lensa_luar, cari_harga_lensa_stock, catat_logframe, inject_hide_sidebar_icon
 )
 from constants import SHEET_KEY, SHEET_NAMES
+inject_hide_sidebar_icon
 def run():
     @st.cache_data(ttl=300)
     def load_data():

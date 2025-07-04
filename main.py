@@ -1,17 +1,11 @@
 import streamlit as st
 from menu import show_menu
 from constants import USERS
-from utils import set_font
+from utils import set_font, inject_hide_sidebar_icon
 
 st.set_page_config(page_title="Optik Maroon Pontianak", layout="centered")
 set_font()
-st.markdown("""
-    <style>
-    body {
-        background-color: red;
-    }
-    </style>
-""", unsafe_allow_html=True)
+inject_hide_sidebar_icon()
 
 def pilih_user():
     st.title("Optik Maroon Pontianak")
