@@ -22,12 +22,6 @@ if "user" not in st.session_state:
 if "page" not in st.session_state:
     st.session_state["page"] = "pilih_user"
 
-if st.sidebar.button("🧹 Reset Session"):
-    for key in st.session_state.keys():
-        del st.session_state[key]
-    st.rerun()
-
-
 # Navigasi halaman
 if st.session_state["page"] == "pilih_user":
     pilih_user()
