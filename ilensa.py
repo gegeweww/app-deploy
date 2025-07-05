@@ -50,9 +50,9 @@ def run():
             (df_lensa['Jenis'] == selected_Jenis) &
             (df_lensa['Tipe'] == selected_Tipe) &
             (df_lensa['Merk'] == selected_Merk) &
-            (df_lensa['SPH'] == selected_SPH) &
-            (df_lensa['CYL'] == selected_CYL) &
-            (df_lensa['Add'] == selected_Add)
+            (df_lensa['SPH'].astype(str) == str(selected_SPH)) &
+            (df_lensa['CYL'].astype(str) == str(selected_CYL)) &
+            (df_lensa['Add'].astype(str) == str(selected_Add))
         ]
         
         if not filter_stock.empty:
