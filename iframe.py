@@ -11,7 +11,6 @@ from utils import (
 def run():
     user = st.session_state["user"]
     client = authorize_gspread()
-    
 
     # Akses sheet utama
     sheet = client.open_by_key(SHEET_KEY).worksheet(SHEET_NAMES["dframe"])
