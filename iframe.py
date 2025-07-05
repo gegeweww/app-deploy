@@ -97,16 +97,16 @@ def run():
                     **Jumlah:** {stock_baru}
                 """)
 
-            catat_logframe(
-                sheet_key=SHEET_KEY,
-                sheet_name=SHEET_NAMES["logframe"],
-                merk=selected_merk,
-                kode=selected_kode,
-                source="iframe",
-                mode=mode,
-                stock_baru=stock_baru,
-                user=user
-            )
+                catat_logframe(
+                    sheet_key=SHEET_KEY,
+                    sheet_name=SHEET_NAMES["logframe"],
+                    merk=selected_merk,
+                    kode=selected_kode,
+                    source="iframe",
+                    mode=mode,
+                    stock_baru=stock_baru,
+                    user=user
+                )
 
     elif mode == 'Tambah Kode':
         selected_merk = st.selectbox('Pilih Merk Frame:', merk_list)
