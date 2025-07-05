@@ -278,12 +278,13 @@ def buat_loglensa_status(source: str, mode=None, status_lensa=None, jenis=None, 
         if status_lensa == 'Stock':
             return 'terjual', f'terjual dalam transaksi: {id_transaksi}, Nama: {nama}'
         
-def catat_logframe(sheet_key, sheet_name, merk, kode, source, status_frame=None, jumlah_input=None, stock_lama=None, stock_baru=None, id_transaksi=None, nama=None, user="Unknown"):
+def catat_logframe(sheet_key, sheet_name, mode, merk, kode, source, status_frame=None, jumlah_input=None, stock_lama=None, stock_baru=None, id_transaksi=None, nama=None, user="Unknown"):
     from datetime import datetime
 
     status_log, keterangan = buat_logframe_status(
         source=source,
         status_frame=status_frame,
+        mode=mode,
         merk=merk,
         kode=kode,
         jumlah_input=jumlah_input,
@@ -310,6 +311,7 @@ def catat_loglensa(sheet_key, sheet_name, jenis, tipe, merk, sph, cyl, add, sour
         sph=sph,
         cyl=cyl,
         add=add,
+        jumlah_input=jumlah_input,
         stock_lama=stock_lama,
         stock_baru=stock_baru,
     )
