@@ -10,6 +10,15 @@ from utils import (
 def run():
     user = st.session_state["user"]
     client = authorize_gspread()
+    if st.session_state.get("popup_success"):
+        st.success("✅ Stock berhasil ditambahkan!")
+        if st.button("OK"):
+            for key in ["selected_Tipe", "selected_Jenis", "selected_Merk", "selected_SPH", "selected_CYL", "selected_Add", "jumlah_input"]:
+                if key in st.session_state:
+                    del st.session_state[key]
+            st.session_state["popup_success"] = False
+            st.rerun()
+
     
     # Akses sheet utama
     sheet = client.open_by_key(SHEET_KEY).worksheet(SHEET_NAMES["dlensa"])
@@ -74,12 +83,6 @@ def run():
                         **Jumlah Ditambahkan:** {jumlah_input}  
                         **Total Sekarang:** {stock_baru}
                     """)
-                    if st.session_state.get("popup_success"):
-                        st.success("✅ Stock berhasil ditambahkan!")
-                        if st.button("OK"):
-                            st.session_state["popup_success"] = False
-                            st.rerun()
-
                               
             catat_loglensa(
                 sheet_key=SHEET_KEY,
