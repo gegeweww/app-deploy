@@ -10,6 +10,12 @@ from utils import (
 def run():
     user = st.session_state["user"]
     client = authorize_gspread()
+    
+    if st.session_state.get("popup_success"):
+        st.success("✅ Stock berhasil ditambahkan!")
+    if st.button("OK"):
+        st.session_state["popup_success"] = False
+        st.rerun()
 
     # Akses sheet utama
     sheet = client.open_by_key(SHEET_KEY).worksheet(SHEET_NAMES["dlensa"])
