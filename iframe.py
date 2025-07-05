@@ -11,13 +11,6 @@ from utils import (
 def run():
     user = st.session_state["user"]
     client = authorize_gspread()
-    
-    if st.session_state.get("popup_success"):
-        st.success("✅ Stock berhasil ditambahkan!")
-    if st.button("OK"):
-        st.session_state["popup_success"] = False
-        st.rerun()
-
 
     # Akses sheet utama
     sheet = client.open_by_key(SHEET_KEY).worksheet(SHEET_NAMES["dframe"])
@@ -60,6 +53,12 @@ def run():
                             **Jumlah Ditambahkan:** {jumlah_input}  
                             **Total Sekarang:** {stock_baru}
                         """)
+                        if st.session_state.get("popup_success"):
+                            st.success("✅ Stock berhasil ditambahkan!")
+                        if st.button("OK"):
+                            st.session_state["popup_success"] = False
+                            st.rerun()
+
 
                 catat_logframe(
                     sheet_key=SHEET_KEY,
@@ -103,6 +102,11 @@ def run():
                     **Harga Jual:** {harga_jual}  
                     **Jumlah:** {stock_baru}
                 """)
+                if st.session_state.get("popup_success"):
+                    st.success("✅ Stock berhasil ditambahkan!")
+                if st.button("OK"):
+                    st.session_state["popup_success"] = False
+                    st.rerun()
 
             catat_logframe(
                 sheet_key=SHEET_KEY,
@@ -143,6 +147,11 @@ def run():
                     **Harga Jual:** {harga_jual}  
                     **Jumlah:** {stock_baru}
                 """)
+                if st.session_state.get("popup_success"):
+                    st.success("✅ Stock berhasil ditambahkan!")
+                if st.button("OK"):
+                    st.session_state["popup_success"] = False
+                    st.rerun()
 
             catat_logframe(
                 sheet_key=SHEET_KEY,

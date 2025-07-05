@@ -74,6 +74,12 @@ def run():
                         **Jumlah Ditambahkan:** {jumlah_input}  
                         **Total Sekarang:** {stock_baru}
                     """)
+                    if st.session_state.get("popup_success"):
+                        st.success("✅ Stock berhasil ditambahkan!")
+                    if st.button("OK"):
+                        st.session_state["popup_success"] = False
+                        st.rerun()
+
                               
             catat_loglensa(
                 sheet_key=SHEET_KEY,
@@ -93,8 +99,3 @@ def run():
 
         else:
             st.error("Data tidak ditemukan. Silakan periksa input Anda.")
-    if st.session_state.get("popup_success"):
-        st.success("✅ Stock berhasil ditambahkan!")
-    if st.button("OK"):
-        st.session_state["popup_success"] = False
-        st.rerun()
