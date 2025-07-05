@@ -55,10 +55,9 @@ def run():
                         """)
                         if st.session_state.get("popup_success"):
                             st.success("✅ Stock berhasil ditambahkan!")
-                        if st.button("OK"):
-                            st.session_state["popup_success"] = False
-                            st.rerun()
-
+                            if st.button("OK"):
+                                st.session_state["popup_success"] = False
+                                st.rerun()
 
                 catat_logframe(
                     sheet_key=SHEET_KEY,
@@ -104,9 +103,9 @@ def run():
                 """)
                 if st.session_state.get("popup_success"):
                     st.success("✅ Stock berhasil ditambahkan!")
-                if st.button("OK"):
-                    st.session_state["popup_success"] = False
-                    st.rerun()
+                    if st.button("OK"):
+                        st.session_state["popup_success"] = False
+                        st.rerun()
 
             catat_logframe(
                 sheet_key=SHEET_KEY,
@@ -149,9 +148,9 @@ def run():
                 """)
                 if st.session_state.get("popup_success"):
                     st.success("✅ Stock berhasil ditambahkan!")
-                if st.button("OK"):
-                    st.session_state["popup_success"] = False
-                    st.rerun()
+                    if st.button("OK"):
+                        st.session_state["popup_success"] = False
+                        st.rerun()
 
             catat_logframe(
                 sheet_key=SHEET_KEY,
