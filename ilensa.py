@@ -16,14 +16,14 @@ def run():
     df_lensa = get_dataframe(SHEET_KEY, SHEET_NAMES["dlensa"])
     
     # Data Lensa
-    tipe_lensa_list = sorted(df_lensa['tipe'].dropna().unique())
-    jenis_lensa_list = sorted(df_lensa[df_lensa['tipe'] == tipe_lensa_list]['jenis'].dropna().unique())
-    merk_lensa_list = sorted(df_lensa[df_lensa['tipe'] == tipe_lensa_list]['merk'].dropna().unique())
-    sph_list = sorted(df_lensa['sph'].dropna().unique())
-    cyl_list = sorted(df_lensa['cyl'].dropna().unique())
-    add_list = sorted(df_lensa['add'].dropna().unique())    
+    Tipe_lensa_list = sorted(df_lensa['Tipe'].dropna().unique())
+    Jenis_lensa_list = sorted(df_lensa[df_lensa['Tipe'] == Tipe_lensa_list]['Jenis'].dropna().unique())
+    merk_lensa_list = sorted(df_lensa[df_lensa['Tipe'] == Tipe_lensa_list]['merk'].dropna().unique())
+    SPH_list = sorted(df_lensa['SPH'].dropna().unique())
+    CYL_list = sorted(df_lensa['CYL'].dropna().unique())
+    Add_list = sorted(df_lensa['Add'].dropna().unique())    
 
-    selected_jenis, selected_tipe, selected_merk, selected_sph, selected_cyl, selected_add, jumlah_input = None, None, None, None, None, None, None
+    selected_Jenis, selected_Tipe, selected_merk, selected_SPH, selected_CYL, selected_Add, jumlah_input = None, None, None, None, None, None, None
 
     # UI Streamlit
     st.title('➕ Input Stock Lensa')
@@ -32,25 +32,25 @@ def run():
     user = st.session_state.get("user", "Unknown")
     
     # Mode Input
-    selected_jenis = st.selectbox('Pilih Jenis Lensa:', jenis_lensa_list)
-    selected_tipe = st.selectbox('Pilih Tipe Lensa:', tipe_lensa_list)
+    selected_Jenis = st.selectbox('Pilih Jenis Lensa:', Jenis_lensa_list)
+    selected_Tipe = st.selectbox('Pilih Tipe Lensa:', Tipe_lensa_list)
     selected_merk = st.selectbox('Pilih Merk Lensa:', merk_lensa_list)
-    selected_sph = st.selectbox('Pilih Sph:', sph_list)
-    selected_cyl = st.selectbox('Pilih Cyl:', cyl_list)
+    selected_SPH = st.selectbox('Pilih SPH:', SPH_list)
+    selected_CYL = st.selectbox('Pilih CYL:', CYL_list)
     jumlah_input = st.number_input('Jumlah', min_value=0, step=1)
-    if selected_tipe != 'Single Vision':
-        selected_add = None
+    if selected_Tipe != 'Single Vision':
+        selected_Add = None
     else:
-        selected_add = st.selectbox('Pilih Add:', add_list)
+        selected_Add = st.selectbox('Pilih Add:', Add_list)
         
     if st.button('Tambah'):
         filter_stock = df_lensa[
-            (df_lensa['jenis'] == selected_jenis) &
-            (df_lensa['tipe'] == selected_tipe) &
+            (df_lensa['Jenis'] == selected_Jenis) &
+            (df_lensa['Tipe'] == selected_Tipe) &
             (df_lensa['merk'] == selected_merk) &
-            (df_lensa['sph'] == selected_sph) &
-            (df_lensa['cyl'] == selected_cyl) &
-            (df_lensa['add'] == selected_add)
+            (df_lensa['SPH'] == selected_SPH) &
+            (df_lensa['CYL'] == selected_CYL) &
+            (df_lensa['Add'] == selected_Add)
         ]
         
         if not filter_stock.empty:
@@ -62,12 +62,12 @@ def run():
                 sheet.update_cell(cell.row, 10, stock_baru)
                 with st.expander("📦 Stock berhasil diperbarui"):
                     st.markdown(f"""
-                        **Jenis:** {selected_jenis}  
-                        **Tipe:** {selected_tipe}  
+                        **Jenis:** {selected_Jenis}  
+                        **Tipe:** {selected_Tipe}  
                         **Merk:** {selected_merk}  
-                        **Sph:** {selected_sph}  
-                        **Cyl:** {selected_cyl}  
-                        **Add:** {selected_add}  
+                        **SPH:** {selected_SPH}  
+                        **CYL:** {selected_CYL}  
+                        **Add:** {selected_Add}  
                         **Jumlah Ditambahkan:** {jumlah_input}  
                         **Total Sekarang:** {stock_baru}
                     """)
@@ -76,37 +76,26 @@ def run():
                     sheet_key=SHEET_KEY,
                     sheet_name=SHEET_NAMES["loglensa"],
                     merk=selected_merk,
-                    tipe=selected_tipe,
-                    jenis=selected_jenis,
-                    sph=selected_sph,
-                    cyl=selected_cyl,
-                    add=selected_add
+                    Tipe=selected_Tipe,
+                    Jenis=selected_Jenis,
+                    SPH=selected_SPH,
+                    CYL=selected_CYL,
+                    Add=selected_Add
                 )
                 catat_loglensa(
                     sheet_key=SHEET_KEY,
                     sheet_name=SHEET_NAMES["loglensa"],
                     source="ilensa",
                     merk=selected_merk,
-                    tipe=selected_tipe,
-                    jenis=selected_jenis,
-                    sph=selected_sph,
-                    cyl=selected_cyl,
-                    add=selected_add,
+                    Tipe=selected_Tipe,
+                    Jenis=selected_Jenis,
+                    SPH=selected_SPH,
+                    CYL=selected_CYL,
+                    Add=selected_Add,
                     jumlah_input=jumlah_input,
                     stock_lama=stock_lama,
                     stock_baru=stock_baru,
                     user=user
                 )
-            with st.expander('Stock Lensa berhasil diperbarui'):
-                st.markdown(f"""
-                    **Jenis:** {selected_jenis}  
-                    **Tipe:** {selected_tipe}  
-                    **Merk:** {selected_merk}  
-                    **Sph:** {selected_sph}  
-                    **Cyl:** {selected_cyl}  
-                    **Add:** {selected_add}  
-                    **Jumlah Ditambahkan:** {jumlah_input}  
-                    **Total Sekarang:** {stock_baru}
-                """)
         else:
             st.error("Data tidak ditemukan. Silakan periksa input Anda.")

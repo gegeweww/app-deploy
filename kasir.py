@@ -5,7 +5,7 @@ from zoneinfo import ZoneInfo
 from utils import (
     authorize_gspread, get_dataframe, append_row,
     get_or_create_pelanggan_id, generate_id_transaksi, generate_id_pembayaran,
-    cari_harga_lensa_luar, cari_harga_lensa_stock, catat_logframe
+    cari_harga_lensa_luar, cari_harga_lensa_stock, catat_logframe, catat_loglensa
 )
 from constants import SHEET_KEY, SHEET_NAMES
 def run():
@@ -253,9 +253,9 @@ def run():
                         user=user
                     )
                     
-                # Catat log lensa
+                # Catat log lensa kanan
                 if item['status_lensa'] == "Stock":
-                    catat_logframe(
+                    catat_loglensa(
                         sheet_key=SHEET_KEY,
                         sheet_name="loglensa",
                         merk=item['merk_lensa'],
@@ -264,6 +264,21 @@ def run():
                         sph=item['sph_r'],
                         cyl=item['cyl_r'],
                         add=item['add_r'],
+                        source="kasir",
+                        status_lensa=item['status_lensa'],
+                        user=user
+                    )
+                # Catat log lensa kiri
+                if item['status_lensa'] == "Stock":
+                    catat_loglensa(
+                        sheet_key=SHEET_KEY,
+                        sheet_name="loglensa",
+                        merk=item['merk_lensa'],
+                        tipe=item['tipe_lensa'],
+                        jenis=item['jenis_lensa'],
+                        sph=item['sph_l'],
+                        cyl=item['cyl_l'],
+                        add=item['add_l'],
                         source="kasir",
                         status_lensa=item['status_lensa'],
                         user=user
@@ -284,22 +299,44 @@ def run():
                         worksheet.update_cell(row_excel, df_frame.columns.get_loc("Stock") + 1, stock_baru)
                         df_frame.at[idx, 'Stock'] = stock_baru
                         
-                # Kurangi Stock Lensa
+                # Kurangi Stock Lensa Kanan
                 if item['status_lensa'] == "Stock":
-                    kondisi_lensa = (df_lensa_stock['jenis'] == item['jenis_lensa']) & \
-                                    (df_lensa_stock['tipe'] == item['tipe_lensa']) & \
-                                    (df_lensa_stock['merk'] == item['merk_lensa']) & \
-                                    (df_lensa_stock['sph'] == item['sph_r']) & \
-                                    (df_lensa_stock['cyl'] == item['cyl_r']) & \
-                                    (df_lensa_stock['add'] == item['add_r'])
+                    kondisi_kanan = (
+                        (df_lensa_stock['jenis'] == item['jenis_lensa']) &
+                        (df_lensa_stock['tipe'] == item['tipe_lensa']) &
+                        (df_lensa_stock['merk'] == item['merk_lensa']) &
+                        (df_lensa_stock['sph'] == item['sph_r']) &
+                        (df_lensa_stock['cyl'] == item['cyl_r']) &
+                        (df_lensa_stock['add'] == item['add_r'])
+                    )
 
-                    if kondisi_lensa.any():
-                        idx = kondisi_lensa.idxmax()
+                    if kondisi_kanan.any():
+                        idx = kondisi_kanan.idxmax()
                         row_excel = idx + 2
                         stock_lama = int(str(df_lensa_stock.at[idx, 'stock']).replace(",", "").strip())
                         stock_baru = max(0, stock_lama - 1)
                         worksheet.update_cell(row_excel, df_lensa_stock.columns.get_loc("stock") + 1, stock_baru)
-                        df_lensa_stock.at[idx, 'stock'] = stock_baru                           
+                        df_lensa_stock.at[idx, 'stock'] = stock_baru
+
+                # Kurangi Stock Lensa Kiri
+                if item['status_lensa'] == "Stock":
+                    kondisi_kiri = (
+                        (df_lensa_stock['jenis'] == item['jenis_lensa']) &
+                        (df_lensa_stock['tipe'] == item['tipe_lensa']) &
+                        (df_lensa_stock['merk'] == item['merk_lensa']) &
+                        (df_lensa_stock['sph'] == item['sph_l']) &
+                        (df_lensa_stock['cyl'] == item['cyl_l']) &
+                        (df_lensa_stock['add'] == item['add_l'])
+                    )
+
+                    if kondisi_kiri.any():
+                        idx = kondisi_kiri.idxmax()
+                        row_excel = idx + 2
+                        stock_lama = int(str(df_lensa_stock.at[idx, 'stock']).replace(",", "").strip())
+                        stock_baru = max(0, stock_lama - 1)
+                        worksheet.update_cell(row_excel, df_lensa_stock.columns.get_loc("stock") + 1, stock_baru)
+                        df_lensa_stock.at[idx, 'stock'] = stock_baru
+                     
 
             df_pembayaran = get_dataframe(SHEET_KEY, SHEET_NAMES['pembayaran'])
             pembayaran_ke = df_pembayaran[df_pembayaran['ID Transaksi'] == id_transaksi].shape[0] + 1
