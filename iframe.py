@@ -9,27 +9,24 @@ from utils import (
 )
 
 def run():
-    user = st.session_state["user"]
+    user = st.session_state.get("user", "Unknown")
     client = authorize_gspread()
 
     # Akses sheet utama
     sheet = client.open_by_key(SHEET_KEY).worksheet(SHEET_NAMES["dframe"])
-
     df = get_dataframe(SHEET_KEY, SHEET_NAMES["dframe"])
     df['Kode'] = df['Kode'].astype(str)
 
-    # Data Frame
-    selected_merk, selected_kode, jumlah_input, distributor = None, None, None, None
-    merk_list = sorted(df['Merk'].dropna().unique())
-
     # UI Streamlit
-    st.title('➕ Input / Edit Stock Frame')
+    st.title('\u2795 Input / Edit Stock Frame')
     st.write('Tambahkan atau ubah stock dari frame yang tersedia')
     today = datetime.now(ZoneInfo("Asia/Jakarta")).strftime("%d-%m-%Y,%H:%M:%S")
-    user = st.session_state.get("user", "Unknown")
 
     # Mode
     mode = st.selectbox('Pilih Mode:', ['Tambah Stock', 'Tambah Merk', 'Tambah Kode'])
+
+    merk_list = sorted(df['Merk'].dropna().unique())
+
     if mode == 'Tambah Stock':
         selected_merk = st.selectbox('Pilih Merk Frame:', merk_list)
         filtered_df = df[df['Merk'] == selected_merk]
@@ -46,18 +43,13 @@ def run():
                 cell = sheet.find(selected_kode)
                 if cell:
                     sheet.update_cell(cell.row, 6, stock_baru)
-                    with st.expander("📦 Stock berhasil diperbarui"):
+                    with st.expander("\ud83d\udce6 Stock berhasil diperbarui"):
                         st.markdown(f"""
                             **Merk:** {selected_merk}  
                             **Kode:** {selected_kode}  
                             **Jumlah Ditambahkan:** {jumlah_input}  
                             **Total Sekarang:** {stock_baru}
                         """)
-                        if st.session_state.get("popup_success"):
-                            st.success("✅ Stock berhasil ditambahkan!")
-                            if st.button("OK"):
-                                st.session_state["popup_success"] = False
-                                st.rerun()
 
                 catat_logframe(
                     sheet_key=SHEET_KEY,
@@ -71,7 +63,6 @@ def run():
                     stock_baru=stock_baru,
                     user=user
                 )
-
             else:
                 st.error("Data frame tidak menemukan kode tersebut.")
 
@@ -87,12 +78,12 @@ def run():
             if selected_merk in df['Merk'].unique():
                 st.warning("Merk ini sudah terdaftar. Silakan ubah ke mode Tambah Stock atau Tambah Kode.")
                 st.stop()
+
             frame_data = [selected_merk, selected_kode, distributor, harga_modal, harga_jual, stock_baru]
             append_row(SHEET_KEY, SHEET_NAMES['dframe'], frame_data)
-            sheet = client.open_by_key(SHEET_KEY).worksheet(SHEET_NAMES["dframe"])
-            sort_sheet(sheet, col=1, last_col='F')  # Sort by column 1 (Merk) A-Z
+            sort_sheet(sheet, col=1, last_col='F')
 
-            with st.expander("📦 Stock baru berhasil ditambahkan"):
+            with st.expander("\ud83d\udce6 Stock baru berhasil ditambahkan"):
                 st.markdown(f"""
                     **Merk:** {selected_merk}  
                     **Kode:** {selected_kode}  
@@ -101,11 +92,6 @@ def run():
                     **Harga Jual:** {harga_jual}  
                     **Jumlah:** {stock_baru}
                 """)
-                if st.session_state.get("popup_success"):
-                    st.success("✅ Stock berhasil ditambahkan!")
-                    if st.button("OK"):
-                        st.session_state["popup_success"] = False
-                        st.rerun()
 
             catat_logframe(
                 sheet_key=SHEET_KEY,
@@ -134,10 +120,9 @@ def run():
 
             frame_data = [selected_merk, selected_kode, distributor, harga_modal, harga_jual, stock_baru]
             append_row(SHEET_KEY, SHEET_NAMES['dframe'], frame_data)
-            sheet = client.open_by_key(SHEET_KEY).worksheet(SHEET_NAMES["dframe"])
-            sort_sheet(sheet, col=1, last_col='F')  # Sort by column 1 (Merk) A-Z
-            
-            with st.expander("📦 Kode baru berhasil ditambahkan"):
+            sort_sheet(sheet, col=1, last_col='F')
+
+            with st.expander("\ud83d\udce6 Kode baru berhasil ditambahkan"):
                 st.markdown(f"""
                     **Merk:** {selected_merk}  
                     **Kode:** {selected_kode}  
@@ -146,11 +131,6 @@ def run():
                     **Harga Jual:** {harga_jual}  
                     **Jumlah:** {stock_baru}
                 """)
-                if st.session_state.get("popup_success"):
-                    st.success("✅ Stock berhasil ditambahkan!")
-                    if st.button("OK"):
-                        st.session_state["popup_success"] = False
-                        st.rerun()
 
             catat_logframe(
                 sheet_key=SHEET_KEY,
@@ -162,3 +142,10 @@ def run():
                 stock_baru=stock_baru,
                 user=user
             )
+
+    # RESET BUTTON (Berlaku untuk semua mode)
+    if st.button("\ud83d\udd01 Reset Form"):
+        for key in list(st.session_state.keys()):
+            if key.startswith("input_") or key.endswith("_diproses") or key in ["popup_success", "mode"]:
+                del st.session_state[key]
+        st.rerun()
