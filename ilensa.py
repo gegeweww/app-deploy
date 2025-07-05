@@ -41,7 +41,7 @@ def run():
     selected_CYL = st.selectbox('Pilih CYL:', CYL_list, index = CYL_list.index('0.00'))
     jumlah_input = st.number_input('Jumlah', min_value=0, step=1)
     if selected_Tipe == 'Single Vision':
-        selected_Add = None
+        selected_Add = ''
     else:
         selected_Add = st.selectbox('Pilih Add:', Add_list)
         
