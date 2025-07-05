@@ -21,7 +21,7 @@ def run():
     CYL_list = sorted(df_lensa['CYL'].dropna().unique())
     Add_list = sorted(df_lensa['Add'].dropna().unique())    
 
-    selected_Jenis, selected_Tipe, selected_merk, selected_SPH, selected_CYL, selected_Add, jumlah_input = None, None, None, None, None, None, None
+    selected_Jenis, selected_Tipe, selected_Merk, selected_SPH, selected_CYL, selected_Add, jumlah_input = None, None, None, None, None, None, None
 
     # UI Streamlit
     st.title('➕ Input Stock Lensa')
@@ -36,9 +36,9 @@ def run():
     Merk_lensa_list = sorted(df_filtered['Merk'].dropna().unique())
 
     selected_Jenis = st.selectbox('Pilih Jenis Lensa:', Jenis_lensa_list)
-    selected_merk = st.selectbox('Pilih Merk Lensa:', Merk_lensa_list)
-    selected_SPH = st.selectbox('Pilih SPH:', SPH_list)
-    selected_CYL = st.selectbox('Pilih CYL:', CYL_list)
+    selected_Merk = st.selectbox('Pilih Merk Lensa:', Merk_lensa_list)
+    selected_SPH = st.selectbox('Pilih SPH:', SPH_list, index = SPH_list.index('0.00'))
+    selected_CYL = st.selectbox('Pilih CYL:', CYL_list, index = CYL_list.index('0.00'))
     jumlah_input = st.number_input('Jumlah', min_value=0, step=1)
     if selected_Tipe == 'Single Vision':
         selected_Add = None
@@ -49,7 +49,7 @@ def run():
         filter_stock = df_lensa[
             (df_lensa['Jenis'] == selected_Jenis) &
             (df_lensa['Tipe'] == selected_Tipe) &
-            (df_lensa['merk'] == selected_merk) &
+            (df_lensa['Merk'] == selected_Merk) &
             (df_lensa['SPH'] == selected_SPH) &
             (df_lensa['CYL'] == selected_CYL) &
             (df_lensa['Add'] == selected_Add)
@@ -59,14 +59,14 @@ def run():
             stock_lama = int(filter_stock['stock'].values[0])
             stock_baru = stock_lama + jumlah_input
             
-            cell = sheet.find(selected_merk)
+            cell = sheet.find(selected_Merk)
             if cell:
                 sheet.update_cell(cell.row, 10, stock_baru)
                 with st.expander("📦 Stock berhasil diperbarui"):
                     st.markdown(f"""
                         **Jenis:** {selected_Jenis}  
                         **Tipe:** {selected_Tipe}  
-                        **Merk:** {selected_merk}  
+                        **Merk:** {selected_Merk}  
                         **SPH:** {selected_SPH}  
                         **CYL:** {selected_CYL}  
                         **Add:** {selected_Add}  
@@ -77,7 +77,7 @@ def run():
                 buat_loglensa_status(
                     sheet_key=SHEET_KEY,
                     sheet_name=SHEET_NAMES["loglensa"],
-                    merk=selected_merk,
+                    Merk=selected_Merk,
                     Tipe=selected_Tipe,
                     Jenis=selected_Jenis,
                     SPH=selected_SPH,
@@ -88,7 +88,7 @@ def run():
                     sheet_key=SHEET_KEY,
                     sheet_name=SHEET_NAMES["loglensa"],
                     source="ilensa",
-                    merk=selected_merk,
+                    Merk=selected_Merk,
                     Tipe=selected_Tipe,
                     Jenis=selected_Jenis,
                     SPH=selected_SPH,
