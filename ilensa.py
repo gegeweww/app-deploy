@@ -33,10 +33,10 @@ def run():
     selected_Tipe = st.selectbox('Pilih Tipe Lensa:', Tipe_lensa_list)
     df_filtered = df_lensa[df_lensa['Tipe'] == selected_Tipe]
     Jenis_lensa_list = sorted(df_filtered['Jenis'].dropna().unique())
-    merk_lensa_list = sorted(df_filtered['merk'].dropna().unique())
+    Merk_lensa_list = sorted(df_filtered['Merk'].dropna().unique())
 
     selected_Jenis = st.selectbox('Pilih Jenis Lensa:', Jenis_lensa_list)
-    selected_merk = st.selectbox('Pilih Merk Lensa:', merk_lensa_list)
+    selected_merk = st.selectbox('Pilih Merk Lensa:', Merk_lensa_list)
     selected_SPH = st.selectbox('Pilih SPH:', SPH_list)
     selected_CYL = st.selectbox('Pilih CYL:', CYL_list)
     jumlah_input = st.number_input('Jumlah', min_value=0, step=1)
