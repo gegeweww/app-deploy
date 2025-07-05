@@ -56,7 +56,7 @@ def run():
         ]
         
         if not filter_stock.empty:
-            stock_lama = int(filter_stock['stock'].values[0])
+            stock_lama = int(filter_stock['Stock'].values[0])
             stock_baru = stock_lama + jumlah_input
             
             cell = sheet.find(selected_Merk)
