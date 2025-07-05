@@ -17,8 +17,6 @@ def run():
     
     # Data Lensa
     Tipe_lensa_list = sorted(df_lensa['Tipe'].dropna().unique())
-    Jenis_lensa_list = sorted(df_lensa[df_lensa['Tipe'] == Tipe_lensa_list]['Jenis'].dropna().unique())
-    merk_lensa_list = sorted(df_lensa[df_lensa['Tipe'] == Tipe_lensa_list]['merk'].dropna().unique())
     SPH_list = sorted(df_lensa['SPH'].dropna().unique())
     CYL_list = sorted(df_lensa['CYL'].dropna().unique())
     Add_list = sorted(df_lensa['Add'].dropna().unique())    
@@ -32,8 +30,12 @@ def run():
     user = st.session_state.get("user", "Unknown")
     
     # Mode Input
-    selected_Jenis = st.selectbox('Pilih Jenis Lensa:', Jenis_lensa_list)
     selected_Tipe = st.selectbox('Pilih Tipe Lensa:', Tipe_lensa_list)
+    df_filtered = df_lensa[df_lensa['Tipe'] == selected_Tipe]
+    Jenis_lensa_list = sorted(df_filtered['Jenis'].dropna().unique())
+    merk_lensa_list = sorted(df_filtered['merk'].dropna().unique())
+
+    selected_Jenis = st.selectbox('Pilih Jenis Lensa:', Jenis_lensa_list)
     selected_merk = st.selectbox('Pilih Merk Lensa:', merk_lensa_list)
     selected_SPH = st.selectbox('Pilih SPH:', SPH_list)
     selected_CYL = st.selectbox('Pilih CYL:', CYL_list)
