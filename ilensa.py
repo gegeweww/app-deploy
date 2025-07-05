@@ -74,30 +74,21 @@ def run():
                         **Total Sekarang:** {stock_baru}
                     """)
                               
-                buat_loglensa_status(
-                    sheet_key=SHEET_KEY,
-                    sheet_name=SHEET_NAMES["loglensa"],
-                    Merk=selected_Merk,
-                    Tipe=selected_Tipe,
-                    Jenis=selected_Jenis,
-                    SPH=selected_SPH,
-                    CYL=selected_CYL,
-                    Add=selected_Add
-                )
-                catat_loglensa(
-                    sheet_key=SHEET_KEY,
-                    sheet_name=SHEET_NAMES["loglensa"],
-                    source="ilensa",
-                    Merk=selected_Merk,
-                    Tipe=selected_Tipe,
-                    Jenis=selected_Jenis,
-                    SPH=selected_SPH,
-                    CYL=selected_CYL,
-                    Add=selected_Add,
-                    jumlah_input=jumlah_input,
-                    stock_lama=stock_lama,
-                    stock_baru=stock_baru,
-                    user=user
-                )
+            catat_loglensa(
+                sheet_key=SHEET_KEY,
+                sheet_name=SHEET_NAMES["loglensa"],
+                source="ilensa",
+                merk=selected_Merk,
+                tipe=selected_Tipe,
+                jenis=selected_Jenis,
+                sph=selected_SPH,
+                cyl=selected_CYL,
+                add=selected_Add,
+                jumlah_input=jumlah_input,
+                stock_lama=stock_lama,
+                stock_baru=stock_baru,
+                user=user
+            )
+
         else:
             st.error("Data tidak ditemukan. Silakan periksa input Anda.")
