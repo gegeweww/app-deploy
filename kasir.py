@@ -251,8 +251,24 @@ def run():
                         id_transaksi=id_transaksi,
                         nama=nama,
                         user=user
-                    )                
-                
+                    )
+                    
+                # Catat log lensa
+                if item['status_lensa'] == "Stock":
+                    catat_logframe(
+                        sheet_key=SHEET_KEY,
+                        sheet_name="loglensa",
+                        merk=item['merk_lensa'],
+                        tipe=item['tipe_lensa'],
+                        jenis=item['jenis_lensa'],
+                        sph=item['sph_r'],
+                        cyl=item['cyl_r'],
+                        add=item['add_r'],
+                        source="kasir",
+                        status_lensa=item['status_lensa'],
+                        user=user
+                    )
+
                 # Kurangi Stock Frame
                 if item['status_frame'] == "Stock":
                     kondisi = (
@@ -267,6 +283,23 @@ def run():
                         stock_baru = max(0, stock_lama - 1)
                         worksheet.update_cell(row_excel, df_frame.columns.get_loc("Stock") + 1, stock_baru)
                         df_frame.at[idx, 'Stock'] = stock_baru
+                        
+                # Kurangi Stock Lensa
+                if item['status_lensa'] == "Stock":
+                    kondisi_lensa = (df_lensa_stock['jenis'] == item['jenis_lensa']) & \
+                                    (df_lensa_stock['tipe'] == item['tipe_lensa']) & \
+                                    (df_lensa_stock['merk'] == item['merk_lensa']) & \
+                                    (df_lensa_stock['sph'] == item['sph_r']) & \
+                                    (df_lensa_stock['cyl'] == item['cyl_r']) & \
+                                    (df_lensa_stock['add'] == item['add_r'])
+
+                    if kondisi_lensa.any():
+                        idx = kondisi_lensa.idxmax()
+                        row_excel = idx + 2
+                        stock_lama = int(str(df_lensa_stock.at[idx, 'stock']).replace(",", "").strip())
+                        stock_baru = max(0, stock_lama - 1)
+                        worksheet.update_cell(row_excel, df_lensa_stock.columns.get_loc("stock") + 1, stock_baru)
+                        df_lensa_stock.at[idx, 'stock'] = stock_baru                           
 
             df_pembayaran = get_dataframe(SHEET_KEY, SHEET_NAMES['pembayaran'])
             pembayaran_ke = df_pembayaran[df_pembayaran['ID Transaksi'] == id_transaksi].shape[0] + 1
