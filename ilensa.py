@@ -11,12 +11,6 @@ def run():
     user = st.session_state["user"]
     client = authorize_gspread()
     
-    if st.session_state.get("popup_success"):
-        st.success("✅ Stock berhasil ditambahkan!")
-    if st.button("OK"):
-        st.session_state["popup_success"] = False
-        st.rerun()
-
     # Akses sheet utama
     sheet = client.open_by_key(SHEET_KEY).worksheet(SHEET_NAMES["dlensa"])
     df_lensa = get_dataframe(SHEET_KEY, SHEET_NAMES["dlensa"])
@@ -36,21 +30,22 @@ def run():
     user = st.session_state.get("user", "Unknown")
     
     # Mode Input
-    selected_Tipe = st.selectbox('Pilih Tipe Lensa:', Tipe_lensa_list)
+    selected_Tipe = st.selectbox('Pilih Tipe Lensa:', Tipe_lensa_list, index=Tipe_lensa_list.index('Single Vision'))
     df_filtered = df_lensa[df_lensa['Tipe'] == selected_Tipe]
     Jenis_lensa_list = sorted(df_filtered['Jenis'].dropna().unique())
     Merk_lensa_list = sorted(df_filtered['Merk'].dropna().unique())
 
-    selected_Jenis = st.selectbox('Pilih Jenis Lensa:', Jenis_lensa_list)
-    selected_Merk = st.selectbox('Pilih Merk Lensa:', Merk_lensa_list)
+    selected_Jenis = st.selectbox('Pilih Jenis Lensa:', Jenis_lensa_list, index=Jenis_lensa_list.index('HMC'))
+    selected_Merk = st.selectbox('Pilih Merk Lensa:', Merk_lensa_list, index=Merk_lensa_list.index('Domas'))
     selected_SPH = st.selectbox('Pilih SPH:', SPH_list, index = SPH_list.index('0.00'))
     selected_CYL = st.selectbox('Pilih CYL:', CYL_list, index = CYL_list.index('0.00'))
-    jumlah_input = st.number_input('Jumlah', min_value=0, step=1)
+
     if selected_Tipe == 'Single Vision':
         selected_Add = ''
     else:
         selected_Add = st.selectbox('Pilih Add:', Add_list)
-        
+    jumlah_input = st.number_input('Jumlah', min_value=0, step=1)       
+     
     if st.button('Tambah'):
         filter_stock = df_lensa[
             (df_lensa['Jenis'] == selected_Jenis) &
@@ -98,3 +93,8 @@ def run():
 
         else:
             st.error("Data tidak ditemukan. Silakan periksa input Anda.")
+    if st.session_state.get("popup_success"):
+        st.success("✅ Stock berhasil ditambahkan!")
+    if st.button("OK"):
+        st.session_state["popup_success"] = False
+        st.rerun()
