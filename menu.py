@@ -33,7 +33,7 @@ def show_menu():
         "Data Frame",
         "Data Lensa",
         "Log Frame",
-        "Input Stock Frame"
+        "Input Stock Frame",
         "Input Stock Lensa"
     ])
 
