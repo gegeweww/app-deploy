@@ -25,6 +25,7 @@ def run():
                     .astype(int)
                 )
         df_lensa_luar.columns = df_lensa_luar.columns.str.lower().str.strip().str.replace(" ", "_")
+        df_lensa_stock.columns = df_lensa_stock.columns.str.strip().str.lower().str.replace(" ", "_")
 
         return df_frame, df_lensa_stock, df_lensa_luar
 
