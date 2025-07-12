@@ -4,23 +4,18 @@ from zoneinfo import ZoneInfo
 from constants import SHEET_KEY, SHEET_NAMES
 from utils import (
     authorize_gspread, get_dataframe,
-    append_row, buat_logframe_status, catat_logframe,
+    append_row, catat_logframe,
     sort_sheet
 )
 
 def run():
-    user = st.session_state["user"]
+    user = st.session_state.get("user", "Unknown")
     client = authorize_gspread()
 
     # Akses sheet utama
     sheet = client.open_by_key(SHEET_KEY).worksheet(SHEET_NAMES["dframe"])
     df = get_dataframe(SHEET_KEY, SHEET_NAMES["dframe"])
     df['Kode'] = df['Kode'].astype(str)
-
-    # Simpan waktu tetap untuk log_id
-    if "logframe_now" not in st.session_state:
-        st.session_state["logframe_now"] = datetime.now(ZoneInfo("Asia/Jakarta")).strftime("%d-%m-%Y,%H:%M:%S")
-    today = st.session_state["logframe_now"]
 
     # Data Frame
     selected_merk, selected_kode, jumlah_input, distributor = None, None, None, None
@@ -29,10 +24,13 @@ def run():
     # UI Streamlit
     st.title('➕ Input / Edit Stock Frame')
     st.write('Tambahkan atau ubah stock dari frame yang tersedia')
-    user = st.session_state.get("user", "Unknown")
+
+    # Waktu pencatatan
+    today = datetime.now(ZoneInfo("Asia/Jakarta")).strftime("%d-%m-%Y,%H:%M:%S")
 
     # Mode
     mode = st.selectbox('Pilih Mode:', ['Tambah Stock', 'Tambah Merk', 'Tambah Kode'])
+
     if mode == 'Tambah Stock':
         selected_merk = st.selectbox('Pilih Merk Frame:', merk_list)
         filtered_df = df[df['Merk'] == selected_merk]
@@ -40,19 +38,12 @@ def run():
         selected_kode = st.selectbox('Pilih Kode Frame:', kode_list)
         jumlah_input = st.number_input('Jumlah', min_value=0, step=1)
 
-        if st.button('Tambah'):
-            st.session_state.trigger_logframe = {
-                "merk": selected_merk,
-                "kode": selected_kode,
-                "mode": mode,
-                "jumlah_input": jumlah_input,
-                "user": user
-            }
-
+        if st.button('Tambah') and jumlah_input > 0:
             filter_stock = df[(df['Merk'] == selected_merk) & (df['Kode'] == selected_kode)]
             if not filter_stock.empty:
                 stock_lama = int(filter_stock['Stock'].values[0])
                 stock_baru = stock_lama + jumlah_input
+
                 cell = sheet.find(selected_kode)
                 if cell:
                     sheet.update_cell(cell.row, 6, stock_baru)
@@ -64,8 +55,18 @@ def run():
                             **Total Sekarang:** {stock_baru}
                         """)
 
-                st.session_state.trigger_logframe["stock_lama"] = stock_lama
-                st.session_state.trigger_logframe["stock_baru"] = stock_baru
+                catat_logframe(
+                    sheet_key=SHEET_KEY,
+                    sheet_name=SHEET_NAMES["logframe"],
+                    merk=selected_merk,
+                    kode=selected_kode,
+                    source="iframe",
+                    mode=mode,
+                    jumlah_input=jumlah_input,
+                    stock_lama=stock_lama,
+                    stock_baru=stock_baru,
+                    user=user
+                )
             else:
                 st.error("Data frame tidak menemukan kode tersebut.")
 
@@ -77,14 +78,16 @@ def run():
         harga_jual = st.number_input('Masukan Harga Jual', min_value=0, step=1000)
         stock_baru = st.number_input('Jumlah', min_value=0, step=1)
 
-        if st.button('Tambah'):
+        if st.button('Tambah') and selected_merk and selected_kode:
             if selected_merk in df['Merk'].unique():
                 st.warning("Merk ini sudah terdaftar. Silakan ubah ke mode Tambah Stock atau Tambah Kode.")
                 st.stop()
+
             frame_data = [selected_merk, selected_kode, distributor, harga_modal, harga_jual, stock_baru]
             append_row(SHEET_KEY, SHEET_NAMES['dframe'], frame_data)
+
             sheet = client.open_by_key(SHEET_KEY).worksheet(SHEET_NAMES["dframe"])
-            sort_sheet(sheet, col=1, last_col='F')
+            sort_sheet(sheet, col=1, last_col='F')  # Sort by column 1 (Merk)
 
             with st.expander("📦 Stock baru berhasil ditambahkan"):
                 st.markdown(f"""
@@ -116,16 +119,17 @@ def run():
         harga_jual = st.number_input('Masukan Harga Jual', min_value=0, step=1000)
         stock_baru = st.number_input('Jumlah', min_value=0, step=1)
 
-        if st.button('Tambah'):
+        if st.button('Tambah') and selected_kode:
             if ((df['Merk'] == selected_merk) & (df['Kode'] == selected_kode)).any():
                 st.warning("Merk dan kode ini sudah terdaftar. Silakan ubah ke mode Tambah Stock.")
                 st.stop()
 
             frame_data = [selected_merk, selected_kode, distributor, harga_modal, harga_jual, stock_baru]
             append_row(SHEET_KEY, SHEET_NAMES['dframe'], frame_data)
+
             sheet = client.open_by_key(SHEET_KEY).worksheet(SHEET_NAMES["dframe"])
-            sort_sheet(sheet, col=1, last_col='F')
-            
+            sort_sheet(sheet, col=1, last_col='F')  # Sort by column 1 (Merk)
+
             with st.expander("📦 Kode baru berhasil ditambahkan"):
                 st.markdown(f"""
                     **Merk:** {selected_merk}  
@@ -146,23 +150,3 @@ def run():
                 stock_baru=stock_baru,
                 user=user
             )
-
-    # Trigger logframe hanya akan dijalankan sekali
-    if "trigger_logframe" in st.session_state:
-        data = st.session_state.pop("trigger_logframe")
-        log_id = f"logframe_{data['mode']}_{data['merk']}_{data['kode']}_{today}"
-        if not st.session_state.get(log_id):
-            catat_logframe(
-                sheet_key=SHEET_KEY,
-                sheet_name=SHEET_NAMES["logframe"],
-                merk=data['merk'],
-                kode=data['kode'],
-                source="iframe",
-                mode=data['mode'],
-                jumlah_input=data.get('jumlah_input'),
-                stock_lama=data.get('stock_lama'),
-                stock_baru=data.get('stock_baru'),
-                user=data['user']
-            )
-            st.session_state[log_id] = True
-            st.session_state.pop("logframe_now", None)
