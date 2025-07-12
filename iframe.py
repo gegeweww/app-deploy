@@ -53,19 +53,21 @@ def run():
                             **Jumlah Ditambahkan:** {jumlah_input}  
                             **Total Sekarang:** {stock_baru}
                         """)
-
-                    catat_logframe(
-                        sheet_key=SHEET_KEY,
-                        sheet_name=SHEET_NAMES["logframe"],
-                        merk=selected_merk,
-                        kode=selected_kode,
-                        source="iframe",
-                        mode=mode,
-                        jumlah_input=jumlah_input,
-                        stock_lama=stock_lama,
-                        stock_baru=stock_baru,
-                        user=user
-                    )
+                    log_id = f"logframe_{mode}_{selected_merk}_{selected_kode}_{today}"
+                    if not st.session_state.get(log_id):
+                        catat_logframe(
+                            sheet_key=SHEET_KEY,
+                            sheet_name=SHEET_NAMES["logframe"],
+                            merk=selected_merk,
+                            kode=selected_kode,
+                            source="iframe",
+                            mode=mode,
+                            jumlah_input=jumlah_input,
+                            stock_lama=stock_lama,
+                            stock_baru=stock_baru,
+                            user=user
+                        )
+                        st.session_state[log_id] = True
             else:
                 st.error("Data frame tidak menemukan kode tersebut.")
 
