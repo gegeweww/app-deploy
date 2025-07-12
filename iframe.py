@@ -38,11 +38,18 @@ def run():
         jumlah_input = st.number_input('Jumlah', min_value=0, step=1)
 
         if st.button('Tambah'):
+            st.session_state.trigger_logframe = {
+                "merk": selected_merk,
+                "kode": selected_kode,
+                "mode": mode,
+                "jumlah_input": jumlah_input,
+                "user": user
+            }
+
             filter_stock = df[(df['Merk'] == selected_merk) & (df['Kode'] == selected_kode)]
             if not filter_stock.empty:
                 stock_lama = int(filter_stock['Stock'].values[0])
                 stock_baru = stock_lama + jumlah_input
-
                 cell = sheet.find(selected_kode)
                 if cell:
                     sheet.update_cell(cell.row, 6, stock_baru)
@@ -53,23 +60,13 @@ def run():
                             **Jumlah Ditambahkan:** {jumlah_input}  
                             **Total Sekarang:** {stock_baru}
                         """)
-                    log_id = f"logframe_{mode}_{selected_merk}_{selected_kode}_{today}"
-                    if not st.session_state.get(log_id):
-                        catat_logframe(
-                            sheet_key=SHEET_KEY,
-                            sheet_name=SHEET_NAMES["logframe"],
-                            merk=selected_merk,
-                            kode=selected_kode,
-                            source="iframe",
-                            mode=mode,
-                            jumlah_input=jumlah_input,
-                            stock_lama=stock_lama,
-                            stock_baru=stock_baru,
-                            user=user
-                        )
-                        st.session_state[log_id] = True
+
+                # Simpan nilai lama dan baru ke session state juga
+                st.session_state.trigger_logframe["stock_lama"] = stock_lama
+                st.session_state.trigger_logframe["stock_baru"] = stock_baru
             else:
                 st.error("Data frame tidak menemukan kode tersebut.")
+
 
     elif mode == 'Tambah Merk':
         selected_merk = st.text_input('Masukan Merk Baru')
@@ -148,3 +145,22 @@ def run():
                 stock_baru=stock_baru,
                 user=user
             )
+
+    # Harus diletakkan DI BAWAH semua mode dan button
+    if "trigger_logframe" in st.session_state:
+        data = st.session_state.pop("trigger_logframe")
+        log_id = f"logframe_{data['mode']}_{data['merk']}_{data['kode']}_{today}"
+        if not st.session_state.get(log_id):
+            catat_logframe(
+                sheet_key=SHEET_KEY,
+                sheet_name=SHEET_NAMES["logframe"],
+                merk=data['merk'],
+                kode=data['kode'],
+                source="iframe",
+                mode=data['mode'],
+                jumlah_input=data.get('jumlah_input'),
+                stock_lama=data.get('stock_lama'),
+                stock_baru=data.get('stock_baru'),
+                user=data['user']
+            )
+            st.session_state[log_id] = True
