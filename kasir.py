@@ -339,10 +339,7 @@ def run():
                         stock_lama = int(str(df_lensa_stock.at[idx, 'stock']).replace(",", "").strip())
                         stock_baru = max(0, stock_lama - 1)
                         worksheet.update_cell(row_excel, df_lensa_stock.columns.get_loc("stock") + 1, stock_baru)
-                        df_lensa_stock.at[idx, 'stock'] = stock_baru
-            
-            st.session_state['simpan_pembayaran'] = False
-            st.rerun()      
+                        df_lensa_stock.at[idx, 'stock'] = stock_baru  
 
             df_pembayaran = get_dataframe(SHEET_KEY, SHEET_NAMES['pembayaran'])
             pembayaran_ke = df_pembayaran[df_pembayaran['ID Transaksi'] == id_transaksi].shape[0] + 1
@@ -364,6 +361,8 @@ def run():
                 'sisa': sisa
             }
             del st.session_state.daftar_item
+            st.session_state['simpan_pembayaran'] = False
+            st.success("Pembayaran berhasil disimpan!")
             st.rerun()
 
     if 'ringkasan_tersimpan' in st.session_state:
