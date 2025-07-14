@@ -43,7 +43,9 @@ def pilih_user():
 
 
 # Navigasi halaman
-if st.session_state["page"] == "pilih_user":
+if not st.session_state["logged_in"]:
+    login()
+elif st.session_state["page"] == "pilih_user":
     pilih_user()
 elif st.session_state["page"] == "menu":
     show_menu()
