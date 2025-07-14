@@ -227,6 +227,9 @@ def run():
             st.success(f"Kembalian: Rp {sisa:,.0f}")
 
         if st.button("💾 Simpan Pembayaran"):
+            st.session_state['simpan_pembayaran'] = True
+            
+        if st.session_state.get('simpan_pembayaran', False):
             id_transaksi = generate_id_transaksi(SHEET_KEY, SHEET_NAMES['transaksi'], tanggal_transaksi)
             id_pembayaran = generate_id_pembayaran(SHEET_KEY, SHEET_NAMES['pembayaran'], tanggal_transaksi)
             user = st.session_state.get("user", "Unknown")
@@ -337,7 +340,9 @@ def run():
                         stock_baru = max(0, stock_lama - 1)
                         worksheet.update_cell(row_excel, df_lensa_stock.columns.get_loc("stock") + 1, stock_baru)
                         df_lensa_stock.at[idx, 'stock'] = stock_baru
-                     
+            
+            st.session_state['simpan_pembayaran'] = False
+            st.rerun()      
 
             df_pembayaran = get_dataframe(SHEET_KEY, SHEET_NAMES['pembayaran'])
             pembayaran_ke = df_pembayaran[df_pembayaran['ID Transaksi'] == id_transaksi].shape[0] + 1
