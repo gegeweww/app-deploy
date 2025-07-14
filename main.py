@@ -6,6 +6,21 @@ from utils import set_font
 st.set_page_config(page_title="Optik Maroon Pontianak", layout="centered", initial_sidebar_state="expanded")
 set_font()
 
+userlogin = "Maroonp"
+passw = "OMP2025"
+
+def login():
+    st.title("Login")
+
+    username = st.text_input("Username")
+    password = st.text_input("Password", type="password")
+
+    if st.button("login"):
+        if username == userlogin and password == passw:
+            st.success("Login berhasil!")
+        else:
+            st.error("Username atau password salah!")
+
 def pilih_user():
     st.title("Optik Maroon Pontianak")
     st.title("👤 Pilih User")
