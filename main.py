@@ -18,6 +18,7 @@ def login():
     if st.button("login"):
         if username == userlogin and password == passw:
             st.success("Login berhasil!")
+            st.session_state["logged_in"] = True
         else:
             st.error("Username atau password salah!")
 
@@ -32,6 +33,8 @@ def pilih_user():
         st.rerun()
 
 # Setup session
+if "logged_in" not in st.session_state:
+    st.session_state["logged_in"] = False
 if "user" not in st.session_state:
     st.session_state["user"] = None
 if "page" not in st.session_state:
