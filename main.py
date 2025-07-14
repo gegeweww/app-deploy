@@ -27,6 +27,8 @@ def login():
         if username == userlogin and password == passw:
             st.success("Login berhasil!")
             st.session_state["logged_in"] = True
+            st.session_state["page"] = "pilih_user"
+            st.rerun()
         else:
             st.error("Username atau password salah!")
 
@@ -39,8 +41,6 @@ def pilih_user():
         st.session_state["user"] = selected
         st.session_state["page"] = "menu"
         st.rerun()
-
-
 
 # Navigasi halaman
 if not st.session_state["logged_in"]:
