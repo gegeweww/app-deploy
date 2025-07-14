@@ -6,6 +6,14 @@ from utils import set_font
 st.set_page_config(page_title="Optik Maroon Pontianak", layout="centered", initial_sidebar_state="expanded")
 set_font()
 
+# Setup session
+if "logged_in" not in st.session_state:
+    st.session_state["logged_in"] = False
+if "user" not in st.session_state:
+    st.session_state["user"] = None
+if "page" not in st.session_state:
+    st.session_state["page"] = "pilih_user"
+    
 userlogin = "Maroonp"
 passw = "OMP2025"
 
@@ -32,13 +40,7 @@ def pilih_user():
         st.session_state["page"] = "menu"
         st.rerun()
 
-# Setup session
-if "logged_in" not in st.session_state:
-    st.session_state["logged_in"] = False
-if "user" not in st.session_state:
-    st.session_state["user"] = None
-if "page" not in st.session_state:
-    st.session_state["page"] = "pilih_user"
+
 
 # Navigasi halaman
 if st.session_state["page"] == "pilih_user":
