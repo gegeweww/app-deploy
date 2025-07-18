@@ -295,15 +295,28 @@ def catat_logframe(sheet_key, sheet_name, merk, kode, source, mode=None, status_
     )
     
     if status_log and keterangan:
-        timestamp = datetime.now(ZoneInfo("Asia/Jakarta")).strftime("%d-%m-%Y %H:%M:%S")
-        row = [timestamp, merk, kode, status_log, keterangan, user]
-        append_row(sheet_key, sheet_name, row)
-
-
-    if status_log and keterangan:
-        timestamp = datetime.now(ZoneInfo("Asia/Jakarta")).strftime("%d-%m-%Y %H:%M:%S")
-        row = [timestamp, merk, kode, status_log, keterangan, user]
-        append_row(sheet_key, sheet_name, row)
+            # Check if the same log entry already exists
+            try:
+                df_log = get_dataframe(sheet_key, sheet_name)
+                
+                # Check if there's already an identical log entry
+                mask = (
+                    (df_log['Merk'] == merk) & 
+                    (df_log['Kode'] == kode) & 
+                    (df_log['Status'] == status_log) & 
+                    (df_log['Keterangan'] == keterangan)
+                )
+                
+                # If no duplicate found, add the new log entry
+                if not mask.any():
+                    timestamp = datetime.now(ZoneInfo("Asia/Jakarta")).strftime("%d-%m-%Y %H:%M:%S")
+                    row = [timestamp, merk, kode, status_log, keterangan, user]
+                    append_row(sheet_key, sheet_name, row)
+            except Exception as e:
+                # If there's any error (e.g., sheet empty), just add the log entry
+                timestamp = datetime.now(ZoneInfo("Asia/Jakarta")).strftime("%d-%m-%Y %H:%M:%S")
+                row = [timestamp, merk, kode, status_log, keterangan, user]
+                append_row(sheet_key, sheet_name, row)
 
 def catat_loglensa(sheet_key, sheet_name, jenis, tipe, merk, sph, cyl, add, source, mode=None, status_lensa=None, jumlah_input=None, stock_lama=None, stock_baru=None, id_transaksi=None, nama=None, user="Unknown"):
     from datetime import datetime
