@@ -279,7 +279,8 @@ def buat_loglensa_status(source: str, mode=None, status_lensa=None, jenis=None, 
             return 'terjual', f'terjual dalam transaksi: {id_transaksi}, Nama: {nama}'
         
 def catat_logframe(sheet_key, sheet_name, merk, kode, source, mode=None, status_frame=None, jumlah_input=None, stock_lama=None, stock_baru=None, id_transaksi=None, nama=None, user="Unknown"):
-    from datetime import datetime
+    from datetime import datetime, timedelta
+    import pandas as pd
 
     status_log, keterangan = buat_logframe_status(
         source=source,
@@ -295,31 +296,46 @@ def catat_logframe(sheet_key, sheet_name, merk, kode, source, mode=None, status_
     )
     
     if status_log and keterangan:
-            # Check if the same log entry already exists
-            try:
-                df_log = get_dataframe(sheet_key, sheet_name)
-                
-                # Check if there's already an identical log entry
+        timestamp = datetime.now(ZoneInfo("Asia/Jakarta"))
+        timestamp_str = timestamp.strftime("%d-%m-%Y %H:%M:%S")
+        
+        # Check if the same log entry already exists
+        try:
+            df_log = get_dataframe(sheet_key, sheet_name)
+            
+            # For sales transactions, check for the same transaction ID
+            if source == 'kasir' and id_transaksi:
+                mask = (
+                    (df_log['Keterangan'].str.contains(id_transaksi, na=False)) &
+                    (df_log['Merk'] == merk) &
+                    (df_log['Kode'] == kode)
+                )
+            # For stock updates, check for similar entries in the last 5 minutes
+            elif source == 'iframe':
+                five_min_ago = (timestamp - timedelta(minutes=5)).strftime("%d-%m-%Y %H:%M:%S")
                 mask = (
                     (df_log['Merk'] == merk) & 
                     (df_log['Kode'] == kode) & 
-                    (df_log['Status'] == status_log) & 
-                    (df_log['Keterangan'] == keterangan)
+                    (df_log['Status'] == status_log) &
+                    (df_log['Keterangan'] == keterangan) &
+                    (df_log['Timestamp'] >= five_min_ago)
                 )
+            else:
+                mask = pd.Series(False)  # No match if not kasir or iframe
+            
+            # If no duplicate found, add the new log entry
+            if not mask.any():
+                row = [timestamp_str, merk, kode, status_log, keterangan, user]
+                append_row(sheet_key, sheet_name, row)
                 
-                # If no duplicate found, add the new log entry
-                if not mask.any():
-                    timestamp = datetime.now(ZoneInfo("Asia/Jakarta")).strftime("%d-%m-%Y %H:%M:%S")
-                    row = [timestamp, merk, kode, status_log, keterangan, user]
-                    append_row(sheet_key, sheet_name, row)
-            except Exception as e:
-                # If there's any error (e.g., sheet empty), just add the log entry
-                timestamp = datetime.now(ZoneInfo("Asia/Jakarta")).strftime("%d-%m-%Y %H:%M:%S")
-                row = [timestamp, merk, kode, status_log, keterangan, user]
-                append_row(sheet_key, sheet_name, row)
+        except Exception as e:
+            # If there's any error (e.g., sheet empty), just add the log entry
+            row = [timestamp_str, merk, kode, status_log, keterangan, user]
+            append_row(sheet_key, sheet_name, row)
+
 
 def catat_loglensa(sheet_key, sheet_name, jenis, tipe, merk, sph, cyl, add, source, mode=None, status_lensa=None, jumlah_input=None, stock_lama=None, stock_baru=None, id_transaksi=None, nama=None, user="Unknown"):
-    from datetime import datetime
+    from datetime import datetime, timedelta
 
     status_log, keterangan = buat_loglensa_status(
         source=source,
@@ -333,9 +349,52 @@ def catat_loglensa(sheet_key, sheet_name, jenis, tipe, merk, sph, cyl, add, sour
         jumlah_input=jumlah_input,
         stock_lama=stock_lama,
         stock_baru=stock_baru,
+        id_transaksi=id_transaksi,
+        nama=nama
     )
     
     if status_log and keterangan:
-        timestamp = datetime.now(ZoneInfo("Asia/Jakarta")).strftime("%d-%m-%Y %H:%M:%S")
-        row = [timestamp, tipe, merk, jenis, sph, cyl, add, status_log, keterangan, user]
-        append_row(sheet_key, sheet_name, row)
+        timestamp = datetime.now(ZoneInfo("Asia/Jakarta"))
+        timestamp_str = timestamp.strftime("%d-%m-%Y %H:%M:%S")
+        
+        # Check if the same log entry already exists
+        try:
+            df_log = get_dataframe(sheet_key, sheet_name)
+            
+            # For sales transactions, check for the same transaction ID
+            if source in ['kasir', 'luarkota'] and id_transaksi:
+                mask = (
+                    (df_log['Keterangan'].str.contains(id_transaksi, na=False)) &
+                    (df_log['Merk'] == merk) &
+                    (df_log['Jenis'] == jenis) &
+                    (df_log['Tipe'] == tipe) &
+                    (df_log['SPH'] == str(sph)) &
+                    (df_log['CYL'] == str(cyl)) &
+                    (df_log['Add'] == str(add))
+                )
+            # For stock updates, check for similar entries in the last 5 minutes
+            elif source == 'ilensa':
+                five_min_ago = (timestamp - timedelta(minutes=5)).strftime("%d-%m-%Y %H:%M:%S")
+                mask = (
+                    (df_log['Merk'] == merk) & 
+                    (df_log['Jenis'] == jenis) & 
+                    (df_log['Tipe'] == tipe) & 
+                    (df_log['SPH'] == str(sph)) & 
+                    (df_log['CYL'] == str(cyl)) & 
+                    (df_log['Add'] == str(add)) &
+                    (df_log['Status'] == status_log) &
+                    (df_log['Keterangan'] == keterangan) &
+                    (df_log['Timestamp'] >= five_min_ago)
+                )
+            else:
+                mask = pd.Series(False)  # No match if source not recognized
+            
+            # If no duplicate found, add the new log entry
+            if not mask.any():
+                row = [timestamp_str, tipe, merk, jenis, sph, cyl, add, status_log, keterangan, user]
+                append_row(sheet_key, sheet_name, row)
+                
+        except Exception as e:
+            # If there's any error (e.g., sheet empty), just add the log entry
+            row = [timestamp_str, tipe, merk, jenis, sph, cyl, add, status_log, keterangan, user]
+            append_row(sheet_key, sheet_name, row)
