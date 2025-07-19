@@ -33,9 +33,18 @@ def run():
     
     import gspread
     from google.oauth2.service_account import Credentials
-    client = authorize_gspread()
-    worksheet_frame = client.open_by_key(SHEET_KEY).worksheet(SHEET_NAMES['dframe'])
-    worksheet_lensa = client.open_by_key(SHEET_KEY).worksheet(SHEET_NAMES['dlensa'])
+    
+    @st.cache_resource
+    def get_worksheets():
+        client = authorize_gspread()
+        spreadsheet = client.open_by_key(SHEET_KEY)
+        return {
+            'frame': spreadsheet.worksheet(SHEET_NAMES['dframe']),
+            'lensa': spreadsheet.worksheet(SHEET_NAMES['dlensa']),
+        }
+    worksheets = get_worksheets()
+    worksheet_frame = worksheets['frame']
+    worksheet_lensa = worksheets['lensa']
 
     st.title("🧾 Transaksi Kasir")
     today = datetime.now(ZoneInfo("Asia/Jakarta")).strftime("%d-%m-%Y, %H:%M:%S")
@@ -303,6 +312,10 @@ def run():
                         stock_baru = max(0, stock_lama - 1)
                         worksheet_frame.update_cell(row_excel, df_frame.columns.get_loc("Stock") + 1, stock_baru)
                         df_frame.at[idx, 'Stock'] = stock_baru
+                    try:
+                        worksheet_frame.update_cell(row_excel, col_idx, stock_baru)
+                    except Exception as e:
+                        st.warning(f"Gagal update stock frame: {e}")
                         
                 # Kurangi Stock Lensa Kanan
                 if item['status_lensa'] == "Stock":
@@ -322,6 +335,10 @@ def run():
                         stock_baru = max(0, stock_lama - 1)
                         worksheet_lensa.update_cell(row_excel, df_lensa_stock.columns.get_loc("stock") + 1, stock_baru)
                         df_lensa_stock.at[idx, 'stock'] = stock_baru
+                    try:
+                        worksheet_frame.update_cell(row_excel, col_idx, stock_baru)
+                    except Exception as e:
+                        st.warning(f"Gagal update stock frame: {e}")
 
                 # Kurangi Stock Lensa Kiri
                 if item['status_lensa'] == "Stock":
@@ -340,9 +357,17 @@ def run():
                         stock_lama = int(str(df_lensa_stock.at[idx, 'stock']).replace(",", "").strip())
                         stock_baru = max(0, stock_lama - 1)
                         worksheet_lensa.update_cell(row_excel, df_lensa_stock.columns.get_loc("stock") + 1, stock_baru)
-                        df_lensa_stock.at[idx, 'stock'] = stock_baru  
+                        df_lensa_stock.at[idx, 'stock'] = stock_baru
+                    try:
+                        worksheet_frame.update_cell(row_excel, col_idx, stock_baru)
+                    except Exception as e:
+                        st.warning(f"Gagal update stock frame: {e}")
 
-            df_pembayaran = get_dataframe(SHEET_KEY, SHEET_NAMES['pembayaran'])
+            @st.cache_data(ttl=300)
+            def load_pembayaran():
+                return get_dataframe(SHEET_KEY, SHEET_NAMES['pembayaran'])
+
+            df_pembayaran = load_pembayaran()
             pembayaran_ke = df_pembayaran[df_pembayaran['ID Transaksi'] == id_transaksi].shape[0] + 1
 
             pembayaran_data = [
