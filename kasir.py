@@ -34,7 +34,8 @@ def run():
     import gspread
     from google.oauth2.service_account import Credentials
     client = authorize_gspread()
-    worksheet = client.open_by_key(SHEET_KEY).worksheet(SHEET_NAMES['dframe'])
+    worksheet_frame = client.open_by_key(SHEET_KEY).worksheet(SHEET_NAMES['dframe'])
+    worksheet_lensa = client.open_by_key(SHEET_KEY).worksheet(SHEET_NAMES['dlensa'])
 
     st.title("🧾 Transaksi Kasir")
     today = datetime.now(ZoneInfo("Asia/Jakarta")).strftime("%d-%m-%Y, %H:%M:%S")
@@ -300,7 +301,7 @@ def run():
                         row_excel = idx + 2
                         stock_lama = int(str(df_frame.at[idx, 'Stock']).replace(",", "").strip())
                         stock_baru = max(0, stock_lama - 1)
-                        worksheet.update_cell(row_excel, df_frame.columns.get_loc("Stock") + 1, stock_baru)
+                        worksheet_frame.update_cell(row_excel, df_frame.columns.get_loc("Stock") + 1, stock_baru)
                         df_frame.at[idx, 'Stock'] = stock_baru
                         
                 # Kurangi Stock Lensa Kanan
@@ -319,7 +320,7 @@ def run():
                         row_excel = idx + 2
                         stock_lama = int(str(df_lensa_stock.at[idx, 'stock']).replace(",", "").strip())
                         stock_baru = max(0, stock_lama - 1)
-                        worksheet.update_cell(row_excel, df_lensa_stock.columns.get_loc("stock") + 1, stock_baru)
+                        worksheet_lensa.update_cell(row_excel, df_lensa_stock.columns.get_loc("stock") + 1, stock_baru)
                         df_lensa_stock.at[idx, 'stock'] = stock_baru
 
                 # Kurangi Stock Lensa Kiri
@@ -338,7 +339,7 @@ def run():
                         row_excel = idx + 2
                         stock_lama = int(str(df_lensa_stock.at[idx, 'stock']).replace(",", "").strip())
                         stock_baru = max(0, stock_lama - 1)
-                        worksheet.update_cell(row_excel, df_lensa_stock.columns.get_loc("stock") + 1, stock_baru)
+                        worksheet_lensa.update_cell(row_excel, df_lensa_stock.columns.get_loc("stock") + 1, stock_baru)
                         df_lensa_stock.at[idx, 'stock'] = stock_baru  
 
             df_pembayaran = get_dataframe(SHEET_KEY, SHEET_NAMES['pembayaran'])
