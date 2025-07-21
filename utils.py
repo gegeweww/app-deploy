@@ -53,10 +53,16 @@ def get_dataframe(sheet_key: str, sheet_name: str):
 
 
 # Tambahkan satu baris ke sheet
-def append_row(sheet_key, sheet_name, row_data):
+def append_row(sheet_key, sheet_name, data_row):
     client = authorize_gspread()
     sheet = client.open_by_key(sheet_key).worksheet(sheet_name)
-    sheet.append_row(row_data)
+    sheet.append_row(data_row)
+
+# Tambahkan beberapa baris ke sheet
+def append_rows(sheet_key, sheet_name, data_rows):
+    client = authorize_gspread()
+    sheet = client.open_by_key(sheet_key).worksheet(sheet_name)
+    sheet.append_rows(data_rows, value_input_option="USER_ENTERED")
 
 # Sort Data Frame (A-Z)
 def sort_sheet(sheet, col=1, last_col='F'):

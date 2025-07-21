@@ -3,7 +3,7 @@ import pandas as pd
 from datetime import datetime, date
 from zoneinfo import ZoneInfo
 from utils import (
-    authorize_gspread, get_dataframe, append_row,
+    authorize_gspread, get_dataframe, append_row, append_rows,
     get_or_create_pelanggan_id, generate_id_transaksi, generate_id_pembayaran,
     cari_harga_lensa_luar, cari_harga_lensa_stock, catat_logframe, catat_loglensa
 )
@@ -248,6 +248,8 @@ def run():
             id_pembayaran = generate_id_pembayaran(SHEET_KEY, SHEET_NAMES['pembayaran'], tanggal_transaksi)
             user = st.session_state.get("user", "Unknown")
 
+            # Kumpulkan semua data transaksi
+            rows_transaksi = []
             for item in st.session_state.daftar_item:
                 row = [today, tanggal_str, id_transaksi, id_pelanggan, nama,
                     item['status_frame'], item['merk_frame'], item['kode_frame'],
@@ -255,13 +257,15 @@ def run():
                     item['sph_r'], item['cyl_r'], item['axis_r'], item['add_r'],
                     item['sph_l'], item['cyl_l'], item['axis_l'], item['add_l'],
                     item['harga_frame'], item['harga_lensa'], int(item['diskon']), int(item['subtotal']), user]
-                append_row(SHEET_KEY, SHEET_NAMES['transaksi'], [str(x) for x in row])
-                
-                # Catat log frame
-                if item['status_frame'] == "Stock":
-                    catat_logframe(
-                        sheet_key=SHEET_KEY,
-                        sheet_name="logframe",
+                rows_transaksi.append([str(x) for x in row])
+            # Tambahkan data transaksi ke sheet
+            append_rows(SHEET_KEY, SHEET_NAMES['transaksi'], rows_transaksi)
+
+            # Catat log frame
+            if item['status_frame'] == "Stock":
+                catat_logframe(
+                    sheet_key=SHEET_KEY,
+                    sheet_name="logframe",
                         merk=item['merk_frame'],
                         kode=item['kode_frame'],
                         source="kasir",

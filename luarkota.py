@@ -3,7 +3,7 @@ import pandas as pd
 from datetime import datetime, date
 from zoneinfo import ZoneInfo
 from utils import (
-    get_dataframe, append_row,
+    get_dataframe, append_row, append_rows,
     cari_harga_lensa_luar, cari_harga_lensa_stock,
     generate_id_skw, generate_id_pemb_skw
 )
@@ -183,6 +183,8 @@ def run():
                 id_pembayaran = generate_id_pemb_skw(SHEET_KEY, SHEET_NAMES['pesanan_luar_kota'], nama, tanggal_ambil)
                 user = st.session_state.get("user", "Unknown")
 
+                # Kumpulkan semua data transaksi
+                rows_transaksi = []
                 for item in st.session_state.daftar_item_luar:
                     ukuran_r = item['ukuran_r'].split(', ')
                     ukuran_l = item['ukuran_l'].split(', ')
@@ -195,7 +197,9 @@ def run():
                         item['harga_lensa'], item['diskon'], item['potong'], item['ongkir'],
                         item['keterangan'], item['harga_final'] + item['potong'] + item['ongkir'], user
                     ]
-                    append_row(SHEET_KEY, SHEET_NAMES['pesanan_luar_kota'], [str(x) for x in row])
+                    rows_transaksi.append([str(x) for x in row])
+
+                append_rows(SHEET_KEY, SHEET_NAMES['pesanan_luar_kota'], rows_transaksi)
 
                 df_pembayaran = get_dataframe(SHEET_KEY, SHEET_NAMES['pembayaran_luar_kota'])
                 df_pembayaran.columns = df_pembayaran.columns.str.strip().str.lower().str.replace(" ", "_")
