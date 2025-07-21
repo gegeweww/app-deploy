@@ -51,15 +51,19 @@ def run():
     tanggal_transaksi = st.date_input("📅 Tanggal Transaksi", value=date.today(), format="DD/MM/YYYY")
     tanggal_str = tanggal_transaksi.strftime("%d-%m-%Y")
 
-    nama = st.text_input("Nama Konsumen")
-    kontak = st.text_input("No HP")
+    nama = st.text_input("Nama Konsumen", key="nama_konsumen")
+    kontak = st.text_input("No HP", key="no_hp")
     if not nama or not kontak:
         st.warning("Nama dan No HP harus diisi.")
         st.stop()
 
+    @st.cache_data(ttl=300)
+    def cached_get_or_create_pelanggan_id(sheet_key, sheet_name, nama, kontak):
+        return get_or_create_pelanggan_id(sheet_key, sheet_name, nama, kontak)
+
     nama = str(nama).strip().lower()
     kontak = str(kontak).strip()
-    id_pelanggan = get_or_create_pelanggan_id(SHEET_KEY, SHEET_NAMES['pelanggan'], nama, kontak)
+    id_pelanggan = cached_get_or_create_pelanggan_id(SHEET_KEY, SHEET_NAMES['pelanggan'], nama, kontak)
 
     if "daftar_item" not in st.session_state:
         st.session_state.daftar_item = []
@@ -374,8 +378,6 @@ def run():
                 str(pembayaran_ke), user
             ]
             append_row(SHEET_KEY, SHEET_NAMES['pembayaran'], pembayaran_data)
-
-            st.cache_data.clear()
             st.session_state['ringkasan_tersimpan'] = {
                 'id_transaksi': id_transaksi,
                 'tanggal': today,
@@ -383,10 +385,13 @@ def run():
                 'status': status,
                 'sisa': sisa
             }
-            del st.session_state.daftar_item
-            st.session_state['simpan_pembayaran'] = False
-            st.success("Pembayaran berhasil disimpan!")
-            st.rerun()
+
+    def reset_form_kasir():
+        st.session_state.pop("daftar_item", None)
+        st.session_state.pop("simpan_pembayaran", None)
+        st.session_state.pop("ringkasan_tersimpan", None)
+        st.session_state.pop("nama_konsumen", None)
+        st.session_state.pop("no_hp", None)
 
     if 'ringkasan_tersimpan' in st.session_state:
         data = st.session_state['ringkasan_tersimpan']
@@ -399,5 +404,5 @@ def run():
             **Sisa/Kembalian:** Rp {data['sisa']:,.0f}
             """)
             if st.button("OK"):
-                st.session_state.pop("ringkasan_tersimpan", None)
+                reset_form_kasir()
                 st.rerun()
