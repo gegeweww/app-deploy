@@ -5,6 +5,7 @@ import dframe
 import dlensa
 import logframe
 import iframe
+import ilensa
 import kasir
 import pemb_angsuran
 import logtransaksi
@@ -32,7 +33,8 @@ def show_menu():
         "Data Frame",
         "Data Lensa",
         "Log Frame",
-        "Input Stock Frame"
+        "Input Stock Frame",
+        "Input Stock Lensa"
     ])
 
     if menu == "Data Frame":
@@ -55,3 +57,5 @@ def show_menu():
         pemb_luarkota.run()
     elif menu == "History Luar Kota":
         logluarkota.run()
+    elif menu == "Input Stock Lensa":
+        ilensa.run()

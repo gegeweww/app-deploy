@@ -1,5 +1,6 @@
 import streamlit as st
 from datetime import datetime
+from zoneinfo import ZoneInfo
 from constants import SHEET_KEY, SHEET_NAMES
 from utils import (
     authorize_gspread, get_dataframe,
@@ -24,7 +25,7 @@ def run():
     # UI Streamlit
     st.title('➕ Input / Edit Stock Frame')
     st.write('Tambahkan atau ubah stock dari frame yang tersedia')
-    today = datetime.today().strftime("%Y-%m-%d,%H:%M:%S")
+    today = datetime.now(ZoneInfo("Asia/Jakarta")).strftime("%d-%m-%Y,%H:%M:%S")
     user = st.session_state.get("user", "Unknown")
 
     # Mode

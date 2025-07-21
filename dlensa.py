@@ -1,4 +1,5 @@
 import streamlit as st
+import pandas as pd
 from utils import get_dataframe
 from constants import SHEET_KEY, SHEET_NAMES
 
@@ -56,3 +57,17 @@ def run():
         st.download_button("⬇️ Download seluruh data (.csv)", data=csv, file_name='database_lensa.csv', mime='text/csv')
     else:
         display_df_with_index_start_1(df)
+        
+    tampilkan_stock_rendah = st.checkbox("🔍 Tampilkan lensa dengan stock ≤ 1")
+    if tampilkan_stock_rendah:
+        df['Stock'] = pd.to_numeric(df['Stock'], errors='coerce')
+        df_stock_rendah = df[df['Stock'] <= 1]
+        if not df_stock_rendah.empty:
+            st.warning(f"Ditemukan {len(df_stock_rendah)} lensa dengan stock ≤ 1")
+            display_df_with_index_start_1(df_stock_rendah)
+
+            csv_stock = df_stock_rendah.to_csv(index=False).encode('utf-8')
+            st.download_button("⬇️ Download lensa stock rendah (.csv)", data=csv_stock, file_name='stock_lensa_rendah.csv', mime='text/csv')
+        else:
+            st.success("Stock Lensa Aman")
+        st.stop()

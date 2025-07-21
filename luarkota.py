@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
 from datetime import datetime, date
+from zoneinfo import ZoneInfo
 from utils import (
     get_dataframe, append_row,
     cari_harga_lensa_luar, cari_harga_lensa_stock,
@@ -30,7 +31,7 @@ def run():
     df_frame, df_lensa_stock, df_lensa_luar = load_data()
 
     st.title("📦 Pesanan Luar Kota")
-    today = datetime.today().strftime("%d-%m-%Y, %H:%M:%S")
+    today = datetime.now(ZoneInfo("Asia/Jakarta")).strftime("%d-%m-%Y, %H:%M:%S")
     colL, colR = st.columns(2)
     with colL:
         tanggal_ambil = st.date_input("📅 Tanggal Ambil", value=date.today(), format="DD/MM/YYYY")
@@ -219,6 +220,11 @@ def run():
 
             except Exception as e:
                 st.error(f"Terjadi kesalahan saat menyimpan: {e}")
+            
+        if st.button("🔄 Reset Semua Item"):
+            del st.session_state.daftar_item_luar
+            st.success("Daftar item berhasil direset!")
+            st.rerun()
 
     if 'ringkasan_luar' in st.session_state:
         data = st.session_state['ringkasan_luar']
@@ -228,7 +234,7 @@ def run():
             **Id Transaksi:** {data.get('id_transaksi', '-')}  
             **Nama:** {data['nama']}  
             **Status:** {data['status']}  
-            **Sisa/Kembalian:** Rp {data['sisa']:,.0f}log
+            **Sisa/Kembalian:** Rp {data['sisa']:,.0f}
             """)
             if st.button("OK"):
                 st.session_state.pop("ringkasan_luar", None)

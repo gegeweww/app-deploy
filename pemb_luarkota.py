@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 import re
 from datetime import datetime
+from zoneinfo import ZoneInfo
 from utils import get_dataframe, append_row, generate_id_pembayaran, generate_id_pemb_skw
 from constants import SHEET_KEY, SHEET_NAMES
 
@@ -94,8 +95,8 @@ def run():
                 sisa_baru = round(total_terbayar - total, 2)
                 status_baru = "Lunas" if sisa_baru >= 0 else "Belum Lunas"
 
-                tanggal_bayar = datetime.today().strftime("%d-%m-%Y")
-                timestamp = datetime.now().strftime("%d-%m-%Y %H:%M:%S")
+                tanggal_bayar = datetime.now(ZoneInfo("Asia/Jakarta")).strftime("%d-%m-%Y")
+                timestamp = datetime.now(ZoneInfo("Asia/Jakarta")).strftime("%d-%m-%Y %H:%M:%S")
                 ke = df_all.shape[0] + 1
                 user = st.session_state.get("user", "Unknown")
 
