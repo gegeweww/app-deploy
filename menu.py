@@ -4,6 +4,7 @@ import streamlit as st
 import dframe
 import dlensa
 import logframe
+import loglensa
 import iframe
 import ilensa
 import kasir
@@ -33,6 +34,7 @@ def show_menu():
         "Data Frame",
         "Data Lensa",
         "Log Frame",
+        "Log Lensa",
         "Input Stock Frame",
         "Input Stock Lensa"
     ])
@@ -43,6 +45,8 @@ def show_menu():
         dlensa.run()
     elif menu == "Log Frame":
         logframe.run()
+    elif menu == "Log Lensa":
+        loglensa.run()
     elif menu == "Input Stock Frame":
         iframe.run()
     elif menu == "Kasir":
