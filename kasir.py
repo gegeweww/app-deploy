@@ -43,7 +43,6 @@ def run():
     df_lensa_stock['add'] = df_lensa_stock['add'].apply(format_2digit)
     for col in ['jenis', 'tipe', 'merk']:
         df_lensa_stock[col] = df_lensa_stock[col].astype(str).str.lower().str.strip()
-    st.write(df_lensa_stock[df_lensa_stock['sph'] == "0.00"])
     
     import gspread
     from google.oauth2.service_account import Credentials
