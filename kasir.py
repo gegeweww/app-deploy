@@ -259,7 +259,11 @@ def run():
                     item['harga_frame'], item['harga_lensa'], int(item['diskon']), int(item['subtotal']), user]
                 rows_transaksi.append([str(x) for x in row])
             # Tambahkan data transaksi ke sheet
-            append_rows(SHEET_KEY, SHEET_NAMES['transaksi'], rows_transaksi)
+            try:
+                append_rows(SHEET_KEY, SHEET_NAMES['transaksi'], rows_transaksi)
+            except Exception as e:
+                st.error(f"Gagal simpan transaksi: {e}")
+                st.stop()
 
             # Catat log frame
             if item['status_frame'] == "Stock":
@@ -288,6 +292,8 @@ def run():
                         add=item['add_r'],
                         source="kasir",
                         status_lensa=item['status_lensa'],
+                        id_transaksi=id_transaksi,
+                        nama=nama,
                         user=user
                     )
                 # Catat log lensa kiri
@@ -303,6 +309,8 @@ def run():
                         add=item['add_l'],
                         source="kasir",
                         status_lensa=item['status_lensa'],
+                        id_transaksi=id_transaksi,
+                        nama=nama,
                         user=user
                     )
 
@@ -341,8 +349,12 @@ def run():
                         stock_lama = int(str(df_lensa_stock.at[idx, 'stock']).replace(",", "").strip())
                         stock_baru = max(0, stock_lama - 1)
                     try:
-                        worksheet_lensa.update_cell(row_excel, df_lensa_stock.columns.get_loc("stock") + 1, stock_baru)
-                        df_lensa_stock.at[idx, 'stock'] = stock_baru
+                        if stock_lama <= 0:
+                            st.warning(f"Stock lensa {item['merk_lensa']} {item['tipe_lensa']} {item['jenis_lensa']} SPH {item['sph_r']} CYL {item['cyl_r']} sudah habis!")
+                        else:
+                            col_stock = df_lensa_stock.columns.get_loc("Stock")
+                            worksheet_lensa.update_cell(row_excel, col_stock + 1, stock_baru)
+                            df_lensa_stock.at[idx, 'stock'] = stock_baru
                     except Exception as e:
                         st.warning(f"Gagal update stock frame: {e}")
 
@@ -363,8 +375,12 @@ def run():
                         stock_lama = int(str(df_lensa_stock.at[idx, 'stock']).replace(",", "").strip())
                         stock_baru = max(0, stock_lama - 1)
                     try:
-                        worksheet_lensa.update_cell(row_excel, df_lensa_stock.columns.get_loc("stock") + 1, stock_baru)
-                        df_lensa_stock.at[idx, 'stock'] = stock_baru
+                        if stock_lama <= 0:
+                            st.warning(f"Stock lensa {item['merk_lensa']} {item['tipe_lensa']} {item['jenis_lensa']} SPH {item['sph_l']} CYL {item['cyl_l']} sudah habis!")
+                        else:
+                            col_stock = df_lensa_stock.columns.get_loc("Stock")
+                            worksheet_lensa.update_cell(row_excel, col_stock + 1, stock_baru)
+                            df_lensa_stock.at[idx, 'stock'] = stock_baru
                     except Exception as e:
                         st.warning(f"Gagal update stock frame: {e}")
 
