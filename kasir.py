@@ -31,6 +31,20 @@ def run():
 
     df_frame, df_lensa_stock, df_lensa_luar = load_data()
     
+    
+    def format_2digit(val):
+        try:
+            return f"{float(val):.2f}"
+        except Exception:
+            return str(val).strip() if val is not None else ""
+        
+    df_lensa_stock['sph'] = df_lensa_stock['sph'].apply(format_2digit)
+    df_lensa_stock['cyl'] = df_lensa_stock['cyl'].apply(format_2digit)
+    df_lensa_stock['add'] = df_lensa_stock['add'].apply(format_2digit)
+    for col in ['jenis', 'tipe', 'merk']:
+        df_lensa_stock[col] = df_lensa_stock[col].astype(str).str.lower().str.strip()
+    st.write(df_lensa_stock[df_lensa_stock['sph'] == "0.00"])
+    
     import gspread
     from google.oauth2.service_account import Credentials
     
@@ -243,97 +257,42 @@ def run():
         if st.button("💾 Simpan Pembayaran"):
             st.session_state['simpan_pembayaran'] = True
             
-        if st.session_state.get('simpan_pembayaran', False):
-            id_transaksi = generate_id_transaksi(SHEET_KEY, SHEET_NAMES['transaksi'], tanggal_transaksi)
-            id_pembayaran = generate_id_pembayaran(SHEET_KEY, SHEET_NAMES['pembayaran'], tanggal_transaksi)
-            user = st.session_state.get("user", "Unknown")
-
-            # Kumpulkan semua data transaksi
-            rows_transaksi = []
-            for item in st.session_state.daftar_item:
-                row = [today, tanggal_str, id_transaksi, id_pelanggan, nama,
-                    item['status_frame'], item['merk_frame'], item['kode_frame'],
-                    item['status_lensa'], item['jenis_lensa'], item['tipe_lensa'], item['merk_lensa'], item['nama_lensa'],
-                    item['sph_r'], item['cyl_r'], item['axis_r'], item['add_r'],
-                    item['sph_l'], item['cyl_l'], item['axis_l'], item['add_l'],
-                    item['harga_frame'], item['harga_lensa'], int(item['diskon']), int(item['subtotal']), user]
-                rows_transaksi.append([str(x) for x in row])
-            # Tambahkan data transaksi ke sheet
-            try:
-                append_rows(SHEET_KEY, SHEET_NAMES['transaksi'], rows_transaksi)
-            except Exception as e:
-                st.error(f"Gagal simpan transaksi: {e}")
-                st.stop()
-
-            # Catat log frame
-            if item['status_frame'] == "Stock":
-                catat_logframe(
-                    sheet_key=SHEET_KEY,
-                    sheet_name="logframe",
-                        merk=item['merk_frame'],
-                        kode=item['kode_frame'],
-                        source="kasir",
-                        status_frame=item['status_frame'],
-                        id_transaksi=id_transaksi,
-                        nama=nama,
-                        user=user
-                    )
+    # ===================== CEK SEMUA STOK DULU =====================
+    if st.session_state.get('simpan_pembayaran', False):     
+        # Cek stok frame & lensa semua item
+        for item in st.session_state.daftar_item:
+        # Normalisasi data item
+            sph_r = format_2digit(item['sph_r'])
+            cyl_r = format_2digit(item['cyl_r'])
+            add_r = format_2digit(item['add_r']) if item['add_r'] else ""
+            sph_l = format_2digit(item['sph_l'])
+            cyl_l = format_2digit(item['cyl_l'])
+            add_l = format_2digit(item['add_l']) if item['add_l'] else ""
                     
-                # Catat log lensa kanan
-                if item['status_lensa'] == "Stock":
-                    catat_loglensa(
-                        sheet_key=SHEET_KEY,
-                        sheet_name="loglensa",
-                        merk=item['merk_lensa'],
-                        tipe=item['tipe_lensa'],
-                        jenis=item['jenis_lensa'],
-                        sph=item['sph_r'],
-                        cyl=item['cyl_r'],
-                        add=item['add_r'],
-                        source="kasir",
-                        status_lensa=item['status_lensa'],
-                        id_transaksi=id_transaksi,
-                        nama=nama,
-                        user=user
+            # --- Cek stok frame ---
+            if item['status_frame'] == "Stock":
+                kondisi = (
+                    (df_frame['Merk'] == item['merk_frame']) &
+                    (df_frame['Kode'] == item['kode_frame'])
+                )
+                if kondisi.any():
+                    idx = kondisi.idxmax()
+                    stock_lama = int(str(df_frame.at[idx, 'Stock']).replace(",", "").strip())
+                    if stock_lama == 0:
+                        st.warning(f"Stock frame {item['merk_frame']} {item['kode_frame']} sudah habis!")
+                        st.session_state['simpan_pembayaran'] = False
+                        st.stop()
+            # --- Cek stok lensa kanan ---
+            if item['status_lensa'] == "Stock":
+                if item['tipe_lensa'].lower() == 'single vision':
+                    kondisi_kanan = (
+                        (df_lensa_stock['jenis'] == item['jenis_lensa']) &
+                        (df_lensa_stock['tipe'] == item['tipe_lensa']) &
+                        (df_lensa_stock['merk'] == item['merk_lensa']) &
+                        (df_lensa_stock['sph'] == item['sph_r']) &
+                        (df_lensa_stock['cyl'] == item['cyl_r'])
                     )
-                # Catat log lensa kiri
-                if item['status_lensa'] == "Stock":
-                    catat_loglensa(
-                        sheet_key=SHEET_KEY,
-                        sheet_name="loglensa",
-                        merk=item['merk_lensa'],
-                        tipe=item['tipe_lensa'],
-                        jenis=item['jenis_lensa'],
-                        sph=item['sph_l'],
-                        cyl=item['cyl_l'],
-                        add=item['add_l'],
-                        source="kasir",
-                        status_lensa=item['status_lensa'],
-                        id_transaksi=id_transaksi,
-                        nama=nama,
-                        user=user
-                    )
-
-                # Kurangi Stock Frame
-                if item['status_frame'] == "Stock":
-                    kondisi = (
-                        (df_frame['Merk'] == item['merk_frame']) &
-                        (df_frame['Kode'] == item['kode_frame'])
-                    )
-
-                    if kondisi.any():
-                        idx = kondisi.idxmax()
-                        row_excel = idx + 2
-                        stock_lama = int(str(df_frame.at[idx, 'Stock']).replace(",", "").strip())
-                        stock_baru = max(0, stock_lama - 1)
-                    try:
-                        worksheet_frame.update_cell(row_excel, df_frame.columns.get_loc("Stock") + 1, stock_baru)
-                        df_frame.at[idx, 'Stock'] = stock_baru
-                    except Exception as e:
-                        st.warning(f"Gagal update stock frame: {e}")
-                        
-                # Kurangi Stock Lensa Kanan
-                if item['status_lensa'] == "Stock":
+                else:
                     kondisi_kanan = (
                         (df_lensa_stock['jenis'] == item['jenis_lensa']) &
                         (df_lensa_stock['tipe'] == item['tipe_lensa']) &
@@ -342,24 +301,28 @@ def run():
                         (df_lensa_stock['cyl'] == item['cyl_r']) &
                         (df_lensa_stock['add'] == item['add_r'])
                     )
-
-                    if kondisi_kanan.any():
-                        idx = kondisi_kanan.idxmax()
-                        row_excel = idx + 2
-                        stock_lama = int(str(df_lensa_stock.at[idx, 'stock']).replace(",", "").strip())
-                        stock_baru = max(0, stock_lama - 1)
+                if kondisi_kanan.any():
+                    idx = kondisi_kanan.idxmax()
+                    stock_val = df_lensa_stock.at[idx, 'stock']
                     try:
-                        if stock_lama <= 0:
-                            st.warning(f"Stock lensa {item['merk_lensa']} {item['tipe_lensa']} {item['jenis_lensa']} SPH {item['sph_r']} CYL {item['cyl_r']} sudah habis!")
-                        else:
-                            col_stock = df_lensa_stock.columns.get_loc("Stock")
-                            worksheet_lensa.update_cell(row_excel, col_stock + 1, stock_baru)
-                            df_lensa_stock.at[idx, 'stock'] = stock_baru
-                    except Exception as e:
-                        st.warning(f"Gagal update stock frame: {e}")
-
-                # Kurangi Stock Lensa Kiri
-                if item['status_lensa'] == "Stock":
+                        stock_lama = int(str(stock_val).replace(",", "").strip()) if str(stock_val).strip() else 0
+                    except Exception:
+                        stock_lama = 0
+                    if stock_lama == 0:
+                        st.warning(f"Stock lensa {item['merk_lensa']} {item['tipe_lensa']} {item['jenis_lensa']} SPH {item['sph_r']} CYL {item['cyl_r']} sudah habis!")
+                        st.session_state['simpan_pembayaran'] = False
+                        st.stop()
+            # --- Cek stok lensa kiri ---
+            if item['status_lensa'] == "Stock":
+                if item['tipe_lensa'].lower() == 'single vision':
+                    kondisi_kiri = (
+                        (df_lensa_stock['jenis'] == item['jenis_lensa']) &
+                        (df_lensa_stock['tipe'] == item['tipe_lensa']) &
+                        (df_lensa_stock['merk'] == item['merk_lensa']) &
+                        (df_lensa_stock['sph'] == item['sph_l']) &
+                        (df_lensa_stock['cyl'] == item['cyl_l'])
+                    )
+                else:
                     kondisi_kiri = (
                         (df_lensa_stock['jenis'] == item['jenis_lensa']) &
                         (df_lensa_stock['tipe'] == item['tipe_lensa']) &
@@ -368,43 +331,201 @@ def run():
                         (df_lensa_stock['cyl'] == item['cyl_l']) &
                         (df_lensa_stock['add'] == item['add_l'])
                     )
-
-                    if kondisi_kiri.any():
-                        idx = kondisi_kiri.idxmax()
-                        row_excel = idx + 2
-                        stock_lama = int(str(df_lensa_stock.at[idx, 'stock']).replace(",", "").strip())
-                        stock_baru = max(0, stock_lama - 1)
+                if kondisi_kiri.any():
+                    idx = kondisi_kiri.idxmax()
+                    stock_val = df_lensa_stock.at[idx, 'stock']
                     try:
-                        if stock_lama <= 0:
-                            st.warning(f"Stock lensa {item['merk_lensa']} {item['tipe_lensa']} {item['jenis_lensa']} SPH {item['sph_l']} CYL {item['cyl_l']} sudah habis!")
-                        else:
-                            col_stock = df_lensa_stock.columns.get_loc("Stock")
-                            worksheet_lensa.update_cell(row_excel, col_stock + 1, stock_baru)
-                            df_lensa_stock.at[idx, 'stock'] = stock_baru
+                        stock_lama = int(str(stock_val).replace(",", "").strip()) if str(stock_val).strip() else 0
+                    except Exception:
+                        stock_lama = 0
+                    if stock_lama == 0:
+                        st.warning(f"Stock lensa {item['merk_lensa']} {item['tipe_lensa']} {item['jenis_lensa']} SPH {item['sph_l']} CYL {item['cyl_l']} sudah habis!")
+                        st.session_state['simpan_pembayaran'] = False
+                        st.stop()
+        # ===================== JIKA SEMUA STOK AMAN, LANJUTKAN =====================
+
+        id_transaksi = generate_id_transaksi(SHEET_KEY, SHEET_NAMES['transaksi'], tanggal_transaksi)
+        id_pembayaran = generate_id_pembayaran(SHEET_KEY, SHEET_NAMES['pembayaran'], tanggal_transaksi)
+        user = st.session_state.get("user", "Unknown")
+
+        # Simpan transaksi
+        rows_transaksi = []
+        for item in st.session_state.daftar_item:
+            row = [today, tanggal_str, id_transaksi, id_pelanggan, nama,
+                item['status_frame'], item['merk_frame'], item['kode_frame'],
+                item['status_lensa'], item['jenis_lensa'], item['tipe_lensa'], item['merk_lensa'], item['nama_lensa'],
+                item['sph_r'], item['cyl_r'], item['axis_r'], item['add_r'],
+                item['sph_l'], item['cyl_l'], item['axis_l'], item['add_l'],
+                item['harga_frame'], item['harga_lensa'], int(item['diskon']), int(item['subtotal']), user]
+            rows_transaksi.append([str(x) for x in row])
+        try:
+            append_rows(SHEET_KEY, SHEET_NAMES['transaksi'], rows_transaksi)
+        except Exception as e:
+            st.error(f"Gagal simpan transaksi: {e}")
+            st.session_state['simpan_pembayaran'] = False
+            st.stop()
+
+        # Catat log frame & lensa, update stok frame & lensa
+        for item in st.session_state.daftar_item:
+            # Log frame
+            if item['status_frame'] == "Stock":
+                catat_logframe(
+                    sheet_key=SHEET_KEY,
+                    sheet_name="logframe",
+                    merk=item['merk_frame'],
+                    kode=item['kode_frame'],
+                    source="kasir",
+                    status_frame=item['status_frame'],
+                    id_transaksi=id_transaksi,
+                    nama=nama,
+                    user=user
+                )
+            # Log lensa kanan
+            if item['status_lensa'] == "Stock":
+                catat_loglensa(
+                    sheet_key=SHEET_KEY,
+                    sheet_name="loglensa",
+                    merk=item['merk_lensa'],
+                    tipe=item['tipe_lensa'],
+                    jenis=item['jenis_lensa'],
+                    sph=item['sph_r'],
+                    cyl=item['cyl_r'],
+                    add=item['add_r'],
+                    source="kasir",
+                    status_lensa=item['status_lensa'],
+                    id_transaksi=id_transaksi,
+                    nama=nama,
+                    user=user
+                )
+            # Log lensa kiri
+            if item['status_lensa'] == "Stock":
+                catat_loglensa(
+                    sheet_key=SHEET_KEY,
+                    sheet_name="loglensa",
+                    merk=item['merk_lensa'],
+                    tipe=item['tipe_lensa'],
+                    jenis=item['jenis_lensa'],
+                    sph=item['sph_l'],
+                    cyl=item['cyl_l'],
+                    add=item['add_l'],
+                    source="kasir",
+                    status_lensa=item['status_lensa'],
+                    id_transaksi=id_transaksi,
+                    nama=nama,
+                    user=user
+                )
+            # Update stok frame
+            if item['status_frame'] == "Stock":
+                kondisi = (
+                    (df_frame['Merk'] == item['merk_frame']) &
+                    (df_frame['Kode'] == item['kode_frame'])
+                )
+                if kondisi.any():
+                    idx = kondisi.idxmax()
+                    row_excel = idx + 2
+                    stock_lama = int(str(df_frame.at[idx, 'Stock']).replace(",", "").strip())
+                    stock_baru = max(0, stock_lama - 1)
+                    try:
+                        col_Stock = worksheet_frame.find("Stock").col
+                        worksheet_frame.update_cell(row_excel, col_Stock, stock_baru)
+                        df_frame.at[idx, 'Stock'] = stock_baru
                     except Exception as e:
                         st.warning(f"Gagal update stock frame: {e}")
+            # Update stok lensa kanan
+            if item['status_lensa'] == "Stock":
+                if item['tipe_lensa'].lower() == 'single vision':
+                    kondisi_kanan = (
+                        (df_lensa_stock['jenis'] == item['jenis_lensa']) &
+                        (df_lensa_stock['tipe'] == item['tipe_lensa']) &
+                        (df_lensa_stock['merk'] == item['merk_lensa']) &
+                        (df_lensa_stock['sph'] == format_2digit(item['sph_r'])) &
+                        (df_lensa_stock['cyl'] == format_2digit(item['cyl_r']))
+                    )
+                else:
+                    add_r = str(item['add_r']).strip() if item['add_r'] else ""
+                    kondisi_kanan = (
+                        (df_lensa_stock['jenis'] == item['jenis_lensa']) &
+                        (df_lensa_stock['tipe'] == item['tipe_lensa']) &
+                        (df_lensa_stock['merk'] == item['merk_lensa']) &
+                        (df_lensa_stock['sph'] == format_2digit(item['sph_r'])) &
+                        (df_lensa_stock['cyl'] == format_2digit(item['cyl_r'])) &
+                        (df_lensa_stock['add'] == add_r)
+                    )
+                if kondisi_kanan.any():
+                    idx = kondisi_kanan.idxmax()
+                    row_excel = idx + 2
+                    stock_val = df_lensa_stock.at[idx, 'stock']
+                    try:
+                        stock_lama = int(str(stock_val).replace(",", "").strip()) if str(stock_val).strip() else 0
+                    except Exception:
+                        stock_lama = 0
+                    stock_baru = max(0, stock_lama - 1)
+                    try:
+                        col_stock = worksheet_lensa.find("Stock").col
+                        worksheet_lensa.update_cell(row_excel, col_stock, stock_baru)
+                        df_lensa_stock.at[idx, 'stock'] = stock_baru
+                    except Exception as e:
+                        st.warning(f"Gagal update stock lensa kanan: {e}")
+            # Update stok lensa kiri
+            if item['status_lensa'] == "Stock":
+                if item['tipe_lensa'].lower() == 'single vision':
+                    kondisi_kiri = (
+                        (df_lensa_stock['jenis'] == item['jenis_lensa']) &
+                        (df_lensa_stock['tipe'] == item['tipe_lensa']) &
+                        (df_lensa_stock['merk'] == item['merk_lensa']) &
+                        (df_lensa_stock['sph'] == format_2digit(item['sph_l'])) &
+                        (df_lensa_stock['cyl'] == format_2digit(item['cyl_l']))
+                    )
+                else:
+                    add_l = str(item['add_l']).strip() if item['add_l'] else ""
+                    kondisi_kiri = (
+                        (df_lensa_stock['jenis'] == item['jenis_lensa']) &
+                        (df_lensa_stock['tipe'] == item['tipe_lensa']) &
+                        (df_lensa_stock['merk'] == item['merk_lensa']) &
+                        (df_lensa_stock['sph'] == format_2digit(item['sph_l'])) &
+                        (df_lensa_stock['cyl'] == format_2digit(item['cyl_l'])) &
+                        (df_lensa_stock['add'] == add_l)
+                    )
+                if kondisi_kiri.any():
+                    idx = kondisi_kiri.idxmax()
+                    row_excel = idx + 2
+                    stock_val = df_lensa_stock.at[idx, 'stock']
+                    try:
+                        stock_lama = int(str(stock_val).replace(",", "").strip()) if str(stock_val).strip() else 0
+                    except Exception:
+                        stock_lama = 0
+                    stock_baru = max(0, stock_lama - 1)
+                    try:
+                        col_stock = worksheet_lensa.find("Stock").col
+                        worksheet_lensa.update_cell(row_excel, col_stock, stock_baru)
+                        df_lensa_stock.at[idx, 'stock'] = stock_baru
+                    except Exception as e:
+                        st.warning(f"Gagal update stock lensa kiri: {e}")
 
-            @st.cache_data(ttl=300)
-            def load_pembayaran():
-                return get_dataframe(SHEET_KEY, SHEET_NAMES['pembayaran'])
+        # Simpan pembayaran
+        @st.cache_data(ttl=300)
+        def load_pembayaran():
+            return get_dataframe(SHEET_KEY, SHEET_NAMES['pembayaran'])
 
-            df_pembayaran = load_pembayaran()
-            pembayaran_ke = df_pembayaran[df_pembayaran['ID Transaksi'] == id_transaksi].shape[0] + 1
+        df_pembayaran = load_pembayaran()
+        pembayaran_ke = df_pembayaran[df_pembayaran['ID Transaksi'] == id_transaksi].shape[0] + 1
 
-            pembayaran_data = [
-                today, id_transaksi, id_pembayaran, id_pelanggan,
-                tanggal_str, nama, kontak, metode, via,
-                str(int(harga_final)), str(int(nominal)), str(int(sisa)), status,
-                str(pembayaran_ke), user
-            ]
-            append_row(SHEET_KEY, SHEET_NAMES['pembayaran'], pembayaran_data)
-            st.session_state['ringkasan_tersimpan'] = {
-                'id_transaksi': id_transaksi,
-                'tanggal': today,
-                'nama': nama.title(),
-                'status': status,
-                'sisa': sisa
-            }
+        pembayaran_data = [
+            today, id_transaksi, id_pembayaran, id_pelanggan,
+            tanggal_str, nama, kontak, metode, via,
+            str(int(harga_final)), str(int(nominal)), str(int(sisa)), status,
+            str(pembayaran_ke), user
+        ]
+        append_row(SHEET_KEY, SHEET_NAMES['pembayaran'], pembayaran_data)
+        st.session_state['ringkasan_tersimpan'] = {
+            'id_transaksi': id_transaksi,
+            'tanggal': today,
+            'nama': nama.title(),
+            'status': status,
+            'sisa': sisa
+        }
+        st.session_state['simpan_pembayaran'] = False
+        st.rerun()
 
     def reset_form_kasir():
         st.session_state.pop("daftar_item", None)
