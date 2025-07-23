@@ -3,7 +3,7 @@ import pandas as pd
 from datetime import datetime, date
 from zoneinfo import ZoneInfo
 from utils import (
-    get_dataframe, append_row, append_rows,
+    authorize_gspread, get_dataframe, append_row, append_rows, catat_loglensa,
     cari_harga_lensa_luar, cari_harga_lensa_stock,
     generate_id_skw, generate_id_pemb_skw
 )
@@ -26,9 +26,34 @@ def run():
                     .astype(int)
                 )
         df_lensa_luar.columns = df_lensa_luar.columns.str.lower().str.strip().str.replace(" ", "_")
+        df_lensa_stock.columns = df_lensa_stock.columns.str.strip().str.lower().str.replace(" ", "_")
         return df_frame, df_lensa_stock, df_lensa_luar
 
     df_frame, df_lensa_stock, df_lensa_luar = load_data()
+
+    def format_2digit(val):
+        try:
+            return f"{float(val):.2f}"
+        except Exception:
+            return str(val).strip() if val is not None else ""
+
+    df_lensa_stock['sph'] = df_lensa_stock['sph'].apply(format_2digit)
+    df_lensa_stock['cyl'] = df_lensa_stock['cyl'].apply(format_2digit)
+    df_lensa_stock['add'] = df_lensa_stock['add'].apply(format_2digit)
+    for col in ['jenis', 'tipe', 'merk']:
+        df_lensa_stock[col] = df_lensa_stock[col].astype(str).str.lower().str.strip()
+        
+    @st.cache_resource
+    def get_worksheets():
+        client = authorize_gspread()
+        spreadsheet = client.open_by_key(SHEET_KEY)
+        return {
+            'lensastock': spreadsheet.worksheet(SHEET_NAMES['dlensa']),
+            'lensaluar': spreadsheet.worksheet(SHEET_NAMES['lensa_luar_stock'])
+        }
+    worksheets = get_worksheets()
+    worksheet_lensa_stock = worksheets['lensastock']
+    worksheet_lensa_luar = worksheets['lensaluar']
 
     st.title("📦 Pesanan Luar Kota")
     today = datetime.now(ZoneInfo("Asia/Jakarta")).strftime("%d-%m-%Y, %H:%M:%S")
@@ -57,9 +82,9 @@ def run():
     merk_opsi = sorted(df_lensa[(df_lensa['jenis'] == jenis_lensa) & (df_lensa['tipe'] == tipe_lensa)]['merk'].dropna().unique().tolist()) if tipe_lensa else []
     merk_lensa = st.selectbox("Merk Lensa", merk_opsi) if merk_opsi else ""
 
-    nama_lensa = ""
-    sph_r, cyl_r, axis_r, add_r = "", "", "", ""
-    sph_l, cyl_l, axis_l, add_l = "", "", "", ""
+    nama_lensa = None
+    sph_r, cyl_r, axis_r, add_r = None, None, None, None
+    sph_l, cyl_l, axis_l, add_l = None, None, None, None
 
     if status_lensa == "Stock":
         st.markdown("### Ukuran Lensa (Stock)")
@@ -120,12 +145,12 @@ def run():
             "tanggal_ambil": tanggal_ambil,
             "nama": nama,
             "status_lensa": status_lensa,
-            "jenis": jenis_lensa,
-            "tipe": tipe_lensa,
-            "merk": merk_lensa,
+            "jenis_lensa": jenis_lensa,
+            "tipe_lensa": tipe_lensa,
+            "merk_lensa": merk_lensa,
             "nama_lensa": nama_lensa,
-            "ukuran_r": f"SPH: {sph_r}, CYL: {cyl_r}, Axis: {axis_r}, Add: {add_r}",
-            "ukuran_l": f"SPH: {sph_l}, CYL: {cyl_l}, Axis: {axis_l}, Add: {add_l}",
+            "sph_r": sph_r, "cyl_r": cyl_r, "axis_r": axis_r, "add_r": add_r,
+            "sph_l": sph_l, "cyl_l": cyl_l, "axis_l": axis_l, "add_l": add_l,
             "harga_lensa": harga_lensa,
             "harga_final": harga_final,
             "diskon": diskon,
@@ -143,7 +168,7 @@ def run():
         for i, item in enumerate(st.session_state.daftar_item_luar):
             col1, col2 = st.columns([6, 1])
             with col1:
-                st.markdown(f"**Item {i+1}:** {item['merk']} - {item['nama_lensa']} ({item['jenis']})")
+                st.markdown(f"**Item {i+1}:** {item['merk_lensa']} - {item['nama_lensa']} ({item['jenis_lensa']}, {item['tipe_lensa']})")
             with col2:
                 if st.button("❌", key=f"hapus_{i}"):
                     st.session_state.daftar_item_luar.pop(i)
@@ -167,80 +192,251 @@ def run():
         if sisa > 0:
             st.success(f"Kembalian: Rp {sisa:,.0f}")
 
-        if st.button("📤 Submit Pesanan"):
-            if st.session_state.get("sudah_submit_luar"):
-                st.warning("Pesanan sudah dikirim.")
-                st.stop()
+        if st.button("📤 Submit Pembayaran"):
+            st.session_state['simpan_pembayaran'] = True
 
-            try:
-                sheet_name = SHEET_NAMES.get('pesanan_luar_kota')
-                if sheet_name is None:
-                    st.error("Sheet 'pesanan_luar_kota' tidak ditemukan di constants.py")
-                    return
+    # ===================== CEK SEMUA STOK DULU =====================
+    if st.session_state.get('simpan_pembayaran', False):
+        # Cek stock lensa semua item
+        for item in st.session_state.daftar_item_luar:
+            sph_r = format_2digit(item['sph_r'])
+            cyl_r = format_2digit(item['cyl_r'])
+            add_r = format_2digit(item['add_r']) if item['add_r'] else ""
+            sph_l = format_2digit(item['sph_l'])
+            cyl_l = format_2digit(item['cyl_l'])
+            add_l = format_2digit(item['add_l']) if item['add_l'] else ""
+    
+            # --- Cek stok lensa kanan ---
+            if item['status_lensa'] == "Stock":
+                if item['tipe_lensa'].lower() == 'single vision':
+                    kondisi_kanan = (
+                        (df_lensa_stock['jenis'] == item['jenis_lensa']) &
+                        (df_lensa_stock['tipe'] == item['tipe_lensa']) &
+                        (df_lensa_stock['merk'] == item['merk_lensa']) &
+                        (df_lensa_stock['sph'] == item['sph_r']) &
+                        (df_lensa_stock['cyl'] == item['cyl_r'])
+                    )
+                else:
+                    kondisi_kanan = (
+                        (df_lensa_stock['jenis'] == item['jenis_lensa']) &
+                        (df_lensa_stock['tipe'] == item['tipe_lensa']) &
+                        (df_lensa_stock['merk'] == item['merk_lensa']) &
+                        (df_lensa_stock['sph'] == item['sph_r']) &
+                        (df_lensa_stock['cyl'] == item['cyl_r']) &
+                        (df_lensa_stock['add'] == item['add_r'])
+                    )
+                if kondisi_kanan.any():
+                    idx = kondisi_kanan.idxmax()
+                    stock_val = df_lensa_stock.at[idx, 'stock']
+                    try:
+                        stock_lama = int(str(stock_val).replace(",", "").strip()) if str(stock_val).strip() else 0
+                    except Exception:
+                        stock_lama = 0
+                    if stock_lama == 0:
+                        st.warning(f"Stock lensa {item['merk_lensa']} {item['tipe_lensa']} {item['jenis_lensa']} SPH {item['sph_r']} CYL {item['cyl_r']} sudah habis!")
+                        st.session_state['simpan_pembayaran'] = False
+                        st.stop()
+            # --- Cek stok lensa kiri ---
+            if item['status_lensa'] == "Stock":
+                if item['tipe_lensa'].lower() == 'single vision':
+                    kondisi_kiri = (
+                        (df_lensa_stock['jenis'] == item['jenis_lensa']) &
+                        (df_lensa_stock['tipe'] == item['tipe_lensa']) &
+                        (df_lensa_stock['merk'] == item['merk_lensa']) &
+                        (df_lensa_stock['sph'] == item['sph_l']) &
+                        (df_lensa_stock['cyl'] == item['cyl_l'])
+                    )
+                else:
+                    kondisi_kiri = (
+                        (df_lensa_stock['jenis'] == item['jenis_lensa']) &
+                        (df_lensa_stock['tipe'] == item['tipe_lensa']) &
+                        (df_lensa_stock['merk'] == item['merk_lensa']) &
+                        (df_lensa_stock['sph'] == item['sph_l']) &
+                        (df_lensa_stock['cyl'] == item['cyl_l']) &
+                        (df_lensa_stock['add'] == item['add_l'])
+                    )
+                if kondisi_kiri.any():
+                    idx = kondisi_kiri.idxmax()
+                    stock_val = df_lensa_stock.at[idx, 'stock']
+                    try:
+                        stock_lama = int(str(stock_val).replace(",", "").strip()) if str(stock_val).strip() else 0
+                    except Exception:
+                        stock_lama = 0
+                    if stock_lama == 0:
+                        st.warning(f"Stock lensa {item['merk_lensa']} {item['tipe_lensa']} {item['jenis_lensa']} SPH {item['sph_l']} CYL {item['cyl_l']} sudah habis!")
+                        st.session_state['simpan_pembayaran'] = False
+                        st.stop()
 
-                tanggal_display = datetime.strptime(tanggal_ambil, "%d-%m-%Y").strftime('%d-%m-%Y')
-                id_transaksi = generate_id_skw(SHEET_KEY, SHEET_NAMES['pesanan_luar_kota'], nama, tanggal_ambil)
-                id_pembayaran = generate_id_pemb_skw(SHEET_KEY, SHEET_NAMES['pesanan_luar_kota'], nama, tanggal_ambil)
-                user = st.session_state.get("user", "Unknown")
+        # ===================== JIKA SEMUA STOK AMAN, LANJUTKAN =====================
 
-                # Kumpulkan semua data transaksi
-                rows_transaksi = []
-                for item in st.session_state.daftar_item_luar:
-                    ukuran_r = item['ukuran_r'].split(', ')
-                    ukuran_l = item['ukuran_l'].split(', ')
+        id_transaksi = generate_id_skw(SHEET_KEY, SHEET_NAMES['pesanan_luar_kota'], nama, tanggal_ambil)
+        id_pembayaran = generate_id_pemb_skw(SHEET_KEY, SHEET_NAMES['pesanan_luar_kota'], nama, tanggal_ambil)
+        user = st.session_state.get("user", "Unknown")
 
-                    row = [
-                        today, tanggal_ambil, id_transaksi, item['nama'],
-                        item['status_lensa'], item['jenis'], item['tipe'], item['merk'], item['nama_lensa'],
-                        ukuran_r[0].split(": ")[1], ukuran_r[1].split(": ")[1], ukuran_r[2].split(": ")[1], ukuran_r[3].split(": ")[1],
-                        ukuran_l[0].split(": ")[1], ukuran_l[1].split(": ")[1], ukuran_l[2].split(": ")[1], ukuran_l[3].split(": ")[1],
-                        item['harga_lensa'], item['diskon'], item['potong'], item['ongkir'],
-                        item['keterangan'], item['harga_final'] + item['potong'] + item['ongkir'], user
-                    ]
-                    rows_transaksi.append([str(x) for x in row])
+        # Simpan transaksi
+        rows_transaksi = []
+        for item in st.session_state.daftar_item_luar:
+            row = [
+                today, tanggal_ambil, id_transaksi, item['nama'],
+                item['status_lensa'], item['jenis_lensa'], item['tipe_lensa'], item['merk_lensa'], item['nama_lensa'],
+                item['sph_r'], item['cyl_r'], item['axis_r'], item['add_r'],
+                item['sph_l'], item['cyl_l'], item['axis_l'], item['add_l'],
+                item['harga_lensa'], item['diskon'], item['potong'], item['ongkir'],
+                item['keterangan'], item['harga_final'] + item['potong'] + item['ongkir'], user
+            ]
+            rows_transaksi.append([str(x) for x in row])
+        try:
+            append_rows(SHEET_KEY, SHEET_NAMES['pesanan_luar_kota'], rows_transaksi)
+        except Exception as e:
+            st.error(f"Gagal simpan transaksi: {e}")
+            st.session_state['simpan_pembayaran'] = False
+            st.stop()
 
-                append_rows(SHEET_KEY, SHEET_NAMES['pesanan_luar_kota'], rows_transaksi)
+        # Catat log frame & lensa, update stok frame & lensa
+        for item in st.session_state.daftar_item_luar:
+            # Log lensa kanan
+            if item['status_lensa'] == "Stock":
+                catat_loglensa(
+                    sheet_key=SHEET_KEY,
+                    sheet_name="loglensa",
+                    merk=item['merk_lensa'],
+                    tipe=item['tipe_lensa'],
+                    jenis=item['jenis_lensa'],
+                    sph=item['sph_r'],
+                    cyl=item['cyl_r'],
+                    add=item['add_r'],
+                    source="kasir",
+                    status_lensa=item['status_lensa'],
+                    id_transaksi=id_transaksi,
+                    nama=nama,
+                    user=user
+                )
+            # Log lensa kiri
+            if item['status_lensa'] == "Stock":
+                catat_loglensa(
+                    sheet_key=SHEET_KEY,
+                    sheet_name="loglensa",
+                    merk=item['merk_lensa'],
+                    tipe=item['tipe_lensa'],
+                    jenis=item['jenis_lensa'],
+                    sph=item['sph_l'],
+                    cyl=item['cyl_l'],
+                    add=item['add_l'],
+                    source="kasir",
+                    status_lensa=item['status_lensa'],
+                    id_transaksi=id_transaksi,
+                    nama=nama,
+                    user=user
+                )
+            # Update stok lensa kanan
+            if item['status_lensa'] == "Stock":
+                if item['tipe_lensa'].lower() == 'single vision':
+                    kondisi_kanan = (
+                        (df_lensa_stock['jenis'] == item['jenis_lensa']) &
+                        (df_lensa_stock['tipe'] == item['tipe_lensa']) &
+                        (df_lensa_stock['merk'] == item['merk_lensa']) &
+                        (df_lensa_stock['sph'] == format_2digit(item['sph_r'])) &
+                        (df_lensa_stock['cyl'] == format_2digit(item['cyl_r']))
+                    )
+                else:
+                    add_r = str(item['add_r']).strip() if item['add_r'] else ""
+                    kondisi_kanan = (
+                        (df_lensa_stock['jenis'] == item['jenis_lensa']) &
+                        (df_lensa_stock['tipe'] == item['tipe_lensa']) &
+                        (df_lensa_stock['merk'] == item['merk_lensa']) &
+                        (df_lensa_stock['sph'] == format_2digit(item['sph_r'])) &
+                        (df_lensa_stock['cyl'] == format_2digit(item['cyl_r'])) &
+                        (df_lensa_stock['add'] == add_r)
+                    )
+                if kondisi_kanan.any():
+                    idx = kondisi_kanan.idxmax()
+                    row_excel = idx + 2
+                    stock_val = df_lensa_stock.at[idx, 'stock']
+                    try:
+                        stock_lama = int(str(stock_val).replace(",", "").strip()) if str(stock_val).strip() else 0
+                    except Exception:
+                        stock_lama = 0
+                    stock_baru = max(0, stock_lama - 1)
+                    try:
+                        col_stock = worksheet_lensa_stock.find("Stock").col
+                        worksheet_lensa_stock.update_cell(row_excel, col_stock, stock_baru)
+                        df_lensa_stock.at[idx, 'stock'] = stock_baru
+                    except Exception as e:
+                        st.warning(f"Gagal update stock lensa kanan: {e}")
+            # Update stok lensa kiri
+            if item['status_lensa'] == "Stock":
+                if item['tipe_lensa'].lower() == 'single vision':
+                    kondisi_kiri = (
+                        (df_lensa_stock['jenis'] == item['jenis_lensa']) &
+                        (df_lensa_stock['tipe'] == item['tipe_lensa']) &
+                        (df_lensa_stock['merk'] == item['merk_lensa']) &
+                        (df_lensa_stock['sph'] == format_2digit(item['sph_l'])) &
+                        (df_lensa_stock['cyl'] == format_2digit(item['cyl_l']))
+                    )
+                else:
+                    add_l = str(item['add_l']).strip() if item['add_l'] else ""
+                    kondisi_kiri = (
+                        (df_lensa_stock['jenis'] == item['jenis_lensa']) &
+                        (df_lensa_stock['tipe'] == item['tipe_lensa']) &
+                        (df_lensa_stock['merk'] == item['merk_lensa']) &
+                        (df_lensa_stock['sph'] == format_2digit(item['sph_l'])) &
+                        (df_lensa_stock['cyl'] == format_2digit(item['cyl_l'])) &
+                        (df_lensa_stock['add'] == add_l)
+                    )
+                if kondisi_kiri.any():
+                    idx = kondisi_kiri.idxmax()
+                    row_excel = idx + 2
+                    stock_val = df_lensa_stock.at[idx, 'stock']
+                    try:
+                        stock_lama = int(str(stock_val).replace(",", "").strip()) if str(stock_val).strip() else 0
+                    except Exception:
+                        stock_lama = 0
+                    stock_baru = max(0, stock_lama - 1)
+                    try:
+                        col_stock = worksheet_lensa_stock.find("Stock").col
+                        worksheet_lensa_stock.update_cell(row_excel, col_stock, stock_baru)
+                        df_lensa_stock.at[idx, 'stock'] = stock_baru
+                    except Exception as e:
+                        st.warning(f"Gagal update stock lensa kiri: {e}")
+ 
+         # Simpan pembayaran
+        @st.cache_data(ttl=300)
+        def load_pembayaran():
+            return get_dataframe(SHEET_KEY, SHEET_NAMES['pembayaran_luar_kota'])
 
-                df_pembayaran = get_dataframe(SHEET_KEY, SHEET_NAMES['pembayaran_luar_kota'])
-                df_pembayaran.columns = df_pembayaran.columns.str.strip().str.lower().str.replace(" ", "_")
-                pembayaran_ke = df_pembayaran[df_pembayaran['id_transaksi'] == id_transaksi].shape[0] + 1
+        df_pembayaran = load_pembayaran()
+        pembayaran_ke = df_pembayaran[df_pembayaran['Id Transaksi'] == id_transaksi].shape[0] + 1
 
-                pembayaran_data = [
-                    today, tanggal_ambil, id_transaksi, id_pembayaran, nama, metode, via,
-                    int(total), int(nominal), int(sisa), pembayaran_ke, tanggal_bayar, status, user
-                ]
-                append_row(SHEET_KEY, SHEET_NAMES['pembayaran_luar_kota'], [str(x) for x in pembayaran_data])
+        pembayaran_data = [
+            today, tanggal_ambil, id_transaksi, id_pembayaran, nama, metode, via,
+            int(total), int(nominal), int(sisa), pembayaran_ke, tanggal_bayar, status, user
+        ]
+        append_row(SHEET_KEY, SHEET_NAMES['pembayaran_luar_kota'], [str(x) for x in pembayaran_data])
+        st.session_state['ringkasan_tersimpan'] = {
+            'id_transaksi': id_transaksi,
+            'tanggal': today,
+            'nama': nama.title(),
+            'status': status,
+            'sisa': sisa
+        }
+        st.session_state['simpan_pembayaran'] = False
+        st.rerun()
 
-                st.session_state['sudah_submit_luar'] = True
-                st.session_state['ringkasan_luar'] = {
-                    'tanggal': today,
-                    'id_transaksi': id_transaksi,
-                    'nama': nama,
-                    'status': status,
-                    'sisa': sisa
-                }
-                del st.session_state.daftar_item_luar
-                st.rerun()
+    def reset_form_kasir():
+        st.session_state.pop("daftar_item_luar", None)
+        st.session_state.pop("simpan_pembayaran", None)
+        st.session_state.pop("ringkasan_tersimpan", None)
 
-            except Exception as e:
-                st.error(f"Terjadi kesalahan saat menyimpan: {e}")
-            
-        if st.button("🔄 Reset Semua Item"):
-            del st.session_state.daftar_item_luar
-            st.success("Daftar item berhasil direset!")
-            st.rerun()
-
-    if 'ringkasan_luar' in st.session_state:
-        data = st.session_state['ringkasan_luar']
+    if 'ringkasan_tersimpan' in st.session_state:
+        data = st.session_state['ringkasan_tersimpan']
         with st.expander("✅ Pembayaran Berhasil", expanded=True):
             st.markdown(f"""
             **Tanggal Transaksi:** {data['tanggal']}  
-            **Id Transaksi:** {data.get('id_transaksi', '-')}  
+            **ID Transaksi:** `{data['id_transaksi']}`  
             **Nama:** {data['nama']}  
             **Status:** {data['status']}  
             **Sisa/Kembalian:** Rp {data['sisa']:,.0f}
             """)
             if st.button("OK"):
-                st.session_state.pop("ringkasan_luar", None)
-                st.session_state.pop("sudah_submit_luar", None)
+                reset_form_kasir()
                 st.rerun()
