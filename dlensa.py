@@ -6,14 +6,17 @@ from constants import SHEET_KEY, SHEET_NAMES
 def run():
     @st.cache_data(ttl=300)
     def show_data():
-        return get_dataframe(SHEET_KEY, SHEET_NAMES['dlensa'])
+        df_lensa = get_dataframe(SHEET_KEY, SHEET_NAMES['dlensa'])
+        df_lensa_cepat = get_dataframe(SHEET_KEY, SHEET_NAMES['lensacepat'])
+
+        return df_lensa, df_lensa_cepat
 
 
     st.title("🕶️ Database Lensa")
 
-    
-    df = show_data()
-    
+
+    df_lensa, df_lensa_cepat = show_data()
+
     def display_df_with_index_start_1(dataframe):
         df_display = dataframe.reset_index(drop=True)
         df_display.index = df_display.index + 1
@@ -33,7 +36,7 @@ def run():
         reset = st.button("Reset")
 
     if cari:
-        filtered_df = df.copy()
+        filtered_df = df_lensa.copy()
         if tipe_input:
             filtered_df = filtered_df[filtered_df['Tipe'].str.contains(tipe_input, case=False, na=False)]
         if jenis_input:
@@ -51,17 +54,22 @@ def run():
             st.warning("Tidak ditemukan data yang sesuai.")
     elif reset:
         st.info("Menampilkan seluruh data")
-        display_df_with_index_start_1(df)
+        display_df_with_index_start_1(df_lensa)
 
-        csv = df.to_csv(index=False).encode('utf-8')
+        csv = df_lensa.to_csv(index=False).encode('utf-8')
         st.download_button("⬇️ Download seluruh data (.csv)", data=csv, file_name='database_lensa.csv', mime='text/csv')
     else:
-        display_df_with_index_start_1(df)
+        display_df_with_index_start_1(df_lensa)
+    
+    tampilkan_lensa_sisa = st.checkbox("🔍 Tampilkan lensa yang perlu dihabiskan")
+    if tampilkan_lensa_sisa:
+        display_df_with_index_start_1(df_lensa_cepat)
+        
         
     tampilkan_stock_rendah = st.checkbox("🔍 Tampilkan lensa dengan stock ≤ 1")
     if tampilkan_stock_rendah:
-        df['Stock'] = pd.to_numeric(df['Stock'], errors='coerce')
-        df_stock_rendah = df[df['Stock'] <= 1]
+        df_lensa['Stock'] = pd.to_numeric(df_lensa['Stock'], errors='coerce')
+        df_stock_rendah = df_lensa[df_lensa['Stock'] <= 1]
         if not df_stock_rendah.empty:
             st.warning(f"Ditemukan {len(df_stock_rendah)} lensa dengan stock ≤ 1")
             display_df_with_index_start_1(df_stock_rendah)

@@ -2,6 +2,7 @@ SHEET_KEY = '102fJKbi3GAqZ0wjyHAH3L-gj5O_jjLcVcl93PDjfrOU'
 SHEET_NAMES = {
     'dframe': 'MFrame1',
     'dlensa': 'MLensa',
+    'lensacepat': 'Perlu Habis',
     'logframe': 'logframe',
     'loglensa': 'loglensa',
     'transaksi': 'Transaksi',
