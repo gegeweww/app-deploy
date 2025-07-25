@@ -11,9 +11,7 @@ def run():
 
         return df_lensa, df_lensa_cepat
 
-
     st.title("🕶️ Database Lensa")
-
 
     df_lensa, df_lensa_cepat = show_data()
 
@@ -22,14 +20,17 @@ def run():
         df_display.index = df_display.index + 1
         st.dataframe(df_display)
     
+    tipe_option = [""] + sorted(df_lensa['Tipe'].dropna().unique())
+    jenis_option = [""] + sorted(df_lensa['Jenis'].dropna().unique())
+    merk_option = [""] + sorted(df_lensa['Merk'].dropna().unique())
     # --- Filter dan tampilkan ---
     col1, col2, col3, col4, col5 = st.columns([2, 2, 2, 1, 1])
     with col1:
-        tipe_input = st.text_input("Tipe", placeholder="Contoh: Progressive")
+        tipe_input = st.selectbox("Tipe", tipe_option)
     with col2:
-        jenis_input = st.text_input("Jenis", placeholder="Contoh: Bluray")
+        jenis_input = st.selectbox("Jenis", jenis_option)
     with col3:
-        merk_input = st.text_input("Merk", placeholder="Contoh: Domas")
+        merk_input = st.selectbox("Merk", merk_option)
     with col4:
         cari = st.button("Cari")
     with col5:
