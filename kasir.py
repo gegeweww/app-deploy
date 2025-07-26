@@ -172,14 +172,14 @@ def run():
             st.stop()
 
     st.markdown("**Pilih Diskon**")
-    diskon_mode = st.radio("Jenis Diskon", ["Diskon Persen", "Diskon Lensa"])
+    diskon_mode = st.radio("Jenis Diskon", ["Diskon Persen", "Diskon Harga"])
 
     if diskon_mode == "Diskon Persen":
         diskon_persen = st.selectbox("Diskon (%)", [0, 5, 10, 15, 20])
-        diskon_lensa = 0
+        diskon_harga = 0
     else:
         diskon_persen = 0
-        diskon_lensa = st.number_input("Diskon Lensa (Rp)", min_value=0, step=500)
+        diskon_harga = st.number_input("Diskon Harga (Rp)", min_value=0, step=500)
 
     # Harga Frame
     if status_frame == "Stock":
@@ -190,7 +190,7 @@ def run():
     if diskon_mode == "Diskon Persen":
         diskon_nilai = (harga_frame + harga_lensa) * (diskon_persen / 100)
     else:
-        diskon_nilai = diskon_lensa
+        diskon_nilai = diskon_harga
 
     harga_setelah_diskon = harga_frame + harga_lensa - diskon_nilai
 

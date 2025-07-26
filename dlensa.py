@@ -62,12 +62,12 @@ def run():
     else:
         display_df_with_index_start_1(df_lensa)
     
-    tampilkan_lensa_sisa = st.checkbox("🔍 Tampilkan lensa yang perlu dihabiskan")
+    tampilkan_lensa_sisa = st.checkbox("🔍 Tampilkan lensa yang perlu cepat")
     if tampilkan_lensa_sisa:
         display_df_with_index_start_1(df_lensa_cepat)
         
         
-    tampilkan_stock_rendah = st.checkbox("🔍 Tampilkan lensa dengan stock ≤ 1")
+    tampilkan_stock_rendah = st.checkbox("🔍 Tampilkan lensa perlu restock")
     if tampilkan_stock_rendah:
         df_lensa['Stock'] = pd.to_numeric(df_lensa['Stock'], errors='coerce')
         df_stock_rendah = df_lensa[df_lensa['Stock'] <= 1]
