@@ -181,12 +181,13 @@ def generate_id_pemb_skw(sheet_key, sheet_name, nama, tanggal_ambil):
     return f"OMSKW/P/{kode}/{next_num:03}/{tanggal_str}"
 
 # Cari Harga Lensa Stock
-def cari_harga_lensa_stock(df_stock, jenis, merk, pakai_reseller=False):
+def cari_harga_lensa_stock(df_stock, tipe, jenis, merk, pakai_reseller=False):
     df_stock.columns = df_stock.columns.str.lower().str.strip().str.replace(" ", "_")
     kolom_harga = 'harga_reseller' if pakai_reseller else 'harga_jual'
 
     try:
         harga = df_stock[
+            (df_stock['tipe'].str.lower() == tipe.lower()) &
             (df_stock['jenis'].str.lower() == jenis.lower()) &
             (df_stock['merk'].str.lower() == merk.lower())
         ][kolom_harga]\

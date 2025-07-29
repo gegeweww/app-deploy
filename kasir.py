@@ -24,8 +24,8 @@ def run():
                     .replace('', '0')
                     .astype(int)
                 )
-        df_lensa_luar.columns = df_lensa_luar.columns.str.lower().str.strip().str.replace(" ", "_")
-        df_lensa_stock.columns = df_lensa_stock.columns.str.strip().str.lower().str.replace(" ", "_")
+        df_lensa_luar.columns = df_lensa_luar.columns.str.strip().str.replace(" ", "_")
+        df_lensa_stock.columns = df_lensa_stock.columns.str.strip().str.replace(" ", "_")
 
         return df_frame, df_lensa_stock, df_lensa_luar
 
@@ -38,11 +38,11 @@ def run():
         except Exception:
             return str(val).strip() if val is not None else ""
         
-    df_lensa_stock['sph'] = df_lensa_stock['sph'].apply(format_2digit)
-    df_lensa_stock['cyl'] = df_lensa_stock['cyl'].apply(format_2digit)
-    df_lensa_stock['add'] = df_lensa_stock['add'].apply(format_2digit)
-    for col in ['jenis', 'tipe', 'merk']:
-        df_lensa_stock[col] = df_lensa_stock[col].astype(str).str.lower().str.strip()
+    df_lensa_stock['SPH'] = df_lensa_stock['SPH'].apply(format_2digit)
+    df_lensa_stock['CYL'] = df_lensa_stock['CYL'].apply(format_2digit)
+    df_lensa_stock['ADD'] = df_lensa_stock['ADD'].apply(format_2digit)
+    for col in ['Jenis', 'Tipe', 'Merk']:
+        df_lensa_stock[col] = df_lensa_stock[col].astype(str).str.strip()
     
     import gspread
     from google.oauth2.service_account import Credentials
@@ -101,35 +101,50 @@ def run():
     status_lensa = st.selectbox("Status Lensa", ["Stock", "Inti", "Pesan", "Overlens"])
     if status_lensa == "Stock":
         df_lensa = df_lensa_stock.copy()
-        df_lensa.columns = df_lensa.columns.str.lower().str.strip()
+        # Tipe Lensa
+        tipe_option = sorted(df_lensa['Tipe'].dropna().unique())
+        tipe_lensa = st.selectbox("Tipe Lensa", tipe_option)
+        # Merk Lensa
+        df_merk = df_lensa[df_lensa['Tipe'] == tipe_lensa]
+        merk_option = sorted(df_merk['Merk'].dropna().unique())
+        merk_lensa = st.selectbox("Merk Lensa", merk_option)
+        # Jenis Lensa
+        df_jenis = df_lensa[df_lensa['Merk'] == merk_lensa]
+        jenis_option = sorted(df_jenis['Jenis'].dropna().unique())
+        jenis_lensa = st.selectbox("Jenis Lensa", jenis_option)
     else:
-        df_lensa = df_lensa_luar[df_lensa_luar['status'].str.lower() == status_lensa.lower()].copy()
-    
-   
-    jenis_lensa = st.selectbox("Jenis Lensa", sorted(df_lensa['jenis'].dropna().unique()))
-    tipe_lensa = st.selectbox("Tipe Lensa", sorted(df_lensa[df_lensa['jenis'] == jenis_lensa]['tipe'].dropna().unique()))
-    merk_lensa = st.selectbox("Merk Lensa", sorted(df_lensa[df_lensa['jenis'] == jenis_lensa]['merk'].dropna().unique()))
-
+        df_lensa = df_lensa_luar[df_lensa_luar['Status'] == status_lensa].copy()
+        # Tipe Lensa
+        tipe_option = sorted(df_lensa['Tipe'].dropna().unique())
+        tipe_lensa = st.selectbox("Tipe Lensa", tipe_option)
+        # Merk Lensa
+        df_merk = df_lensa[df_lensa['Tipe'] == tipe_lensa]
+        merk_option = sorted(df_merk['Merk'].dropna().unique())
+        merk_lensa = st.selectbox("Merk Lensa", merk_option)
+        # Jenis Lensa
+        df_jenis = df_lensa[df_lensa['Merk'] == merk_lensa]
+        jenis_option = sorted(df_jenis['Jenis'].dropna().unique())
+        jenis_lensa = st.selectbox("Jenis Lensa", jenis_option)
     # Nama Lensa hanya untuk non-stock
     nama_lensa = ""
     if status_lensa == "Stock":
         st.markdown("**Ukuran Lensa**")     
         colR, colL = st.columns(2)
         # List Ukuran
-        sph_list = sorted(df_lensa['sph'].dropna().unique())
-        cyl_list = sorted(df_lensa['cyl'].dropna().unique())
-        add_list = sorted(df_lensa['add'].dropna().unique())
-        
+        sph_list = sorted(df_lensa['SPH'].dropna().unique())
+        cyl_list = sorted(df_lensa['CYL'].dropna().unique())
+        add_list = sorted(df_lensa['ADD'].dropna().unique())
+
         with colR:
             sph_r = st.selectbox("SPH R", sph_list, index = sph_list.index("0.00"))
             cyl_r = st.selectbox("CYL R", cyl_list, index = cyl_list.index("0.00"))
             axis_r = st.selectbox("Axis R", list(range(0, 181))) if cyl_r != "0.00" else ""
-            add_r = st.selectbox("Add R", sorted(df_lensa['add'].dropna().unique())) if tipe_lensa in ["Progressive", "Kryptok", "Flattop"] else ""
+            add_r = st.selectbox("Add R", sorted(df_lensa['ADD'].dropna().unique())) if tipe_lensa in ["Progressive", "Kryptok", "Flattop"] else ""
         with colL:
             sph_l = st.selectbox("SPH L", sph_list, index = sph_list.index("0.00"))
             cyl_l = st.selectbox("CYL L", cyl_list, index = cyl_list.index("0.00"))
             axis_l = st.selectbox("Axis L", list(range(0, 181))) if cyl_l != "0.00" else ""
-            add_l = st.selectbox("Add L", sorted(df_lensa['add'].dropna().unique())) if tipe_lensa in ["Progressive", "Kryptok", "Flattop"] else ""
+            add_l = st.selectbox("Add L", sorted(df_lensa['ADD'].dropna().unique())) if tipe_lensa in ["Progressive", "Kryptok", "Flattop"] else ""
     
     else:
         df_lensa.columns = df_lensa.columns.str.lower().str.strip().str.replace(" ", "_")
@@ -150,20 +165,22 @@ def run():
             sph_r = st.selectbox("SPH R", sph_range, index=sph_range.index("0.00"))
             cyl_r = st.selectbox("CYL R", cyl_range, index=cyl_range.index("0.00"))
             axis_r = st.selectbox("Axis R", list(range(0, 181))) if cyl_r != "0.00" else ""
-            add_r = st.selectbox("Add R", add_range) if tipe_lensa.lower() in ["progressive", "kryptok", "flattop"] else ""
+            add_r = st.selectbox("Add R", add_range) if tipe_lensa in ["Progressive", "Kryptok", "Flattop"] else ""
 
         with colL:
             sph_l = st.selectbox("SPH L", sph_range, index=sph_range.index("0.00"))
             cyl_l = st.selectbox("CYL L", cyl_range, index=cyl_range.index("0.00"))
             axis_l = st.selectbox("Axis L", list(range(0, 181))) if cyl_l != "0.00" else ""
-            add_l = st.selectbox("Add L", add_range) if tipe_lensa.lower() in ["progressive", "kryptok", "flattop"] else ""
+            add_l = st.selectbox("Add L", add_range) if tipe_lensa in ["Progressive", "Kryptok", "Flattop"] else ""
 
 
     # Konversi nilai add (pakai add_r, diasumsikan sama untuk L dan R)
-    add_dipakai = add_r if tipe_lensa.lower() in ["progressive", "kryptok", "flattop"] else ""
-
+    add_dipakai = add_r if tipe_lensa in ["Progressive", "Kryptok", "Flattop"] else ""
     if status_lensa == "Stock":
-        harga_lensa = cari_harga_lensa_stock(df_lensa, jenis_lensa, merk_lensa)
+        harga_lensa = cari_harga_lensa_stock(df_lensa, tipe_lensa, jenis_lensa, merk_lensa)
+        if harga_lensa is None:
+            st.warning("⚠️ Harga lensa stock tidak ditemukan!")
+            st.stop()
 
     else:
         harga_lensa = cari_harga_lensa_luar(df_lensa, nama_lensa, sph_r, cyl_r, add_dipakai, pakai_reseller=False)
@@ -171,6 +188,8 @@ def run():
             st.warning("⚠️ Ukuran tidak sesuai rentang harga manapun!")
             st.stop()
 
+    tambahan = st.number_input("Biaya Tambahan (Rp)", min_value=0, step=5000, value=0)
+    
     st.markdown("**Pilih Diskon**")
     diskon_mode = st.radio("Jenis Diskon", ["Diskon Persen", "Diskon Harga"])
 
@@ -179,7 +198,7 @@ def run():
         diskon_harga = 0
     else:
         diskon_persen = 0
-        diskon_harga = st.number_input("Diskon Harga (Rp)", min_value=0, step=500)
+        diskon_harga = st.number_input("Diskon Harga (Rp)", min_value=0, step=500, value=0)
 
     # Harga Frame
     if status_frame == "Stock":
@@ -187,11 +206,15 @@ def run():
     else:
         harga_frame = 0
     # Diskon
+    harga_frame = int(harga_frame or 0)
+    tambahan = int(tambahan or 0)
+        
     if diskon_mode == "Diskon Persen":
-        diskon_nilai = (harga_frame + harga_lensa) * (diskon_persen / 100)
+        diskon_nilai = float((harga_frame + harga_lensa + tambahan) * (diskon_persen / 100))
     else:
         diskon_nilai = diskon_harga
-
+    diskon_nilai = int(diskon_nilai or 0)
+    # Total Harga Setelah Diskon
     harga_setelah_diskon = harga_frame + harga_lensa - diskon_nilai
 
     # Ringkasan Harga
@@ -212,6 +235,7 @@ def run():
             "sph_l": sph_l, "cyl_l": cyl_l, "axis_l": axis_l, "add_l": add_l,
             "harga_frame": harga_frame,
             "harga_lensa": harga_lensa,
+            "tambahan": tambahan,
             "diskon": diskon_nilai,
             "subtotal": harga_setelah_diskon
         })
@@ -246,7 +270,7 @@ def run():
 
         metode = st.selectbox("Jenis Pembayaran", ["Angsuran", "Full"])
         via = st.selectbox("Via Pembayaran", ["Cash", "TF", "Qris"])
-        nominal = st.number_input("Masukkan Nominal", min_value=0)
+        nominal = st.number_input("Masukkan Nominal", min_value=0, step=1000)
         sisa = nominal - harga_final
         status = "Lunas" if sisa >= 0 else "Belum Lunas"
 
@@ -285,24 +309,24 @@ def run():
             if item['status_lensa'] == "Stock":
                 if item['tipe_lensa'].lower() == 'single vision':
                     kondisi_kanan = (
-                        (df_lensa_stock['jenis'] == item['jenis_lensa']) &
-                        (df_lensa_stock['tipe'] == item['tipe_lensa']) &
-                        (df_lensa_stock['merk'] == item['merk_lensa']) &
-                        (df_lensa_stock['sph'] == item['sph_r']) &
-                        (df_lensa_stock['cyl'] == item['cyl_r'])
+                        (df_lensa_stock['Jenis'] == item['jenis_lensa']) &
+                        (df_lensa_stock['Tipe'] == item['tipe_lensa']) &
+                        (df_lensa_stock['Merk'] == item['merk_lensa']) &
+                        (df_lensa_stock['SPH'] == item['sph_r']) &
+                        (df_lensa_stock['CYL'] == item['cyl_r'])
                     )
                 else:
                     kondisi_kanan = (
-                        (df_lensa_stock['jenis'] == item['jenis_lensa']) &
-                        (df_lensa_stock['tipe'] == item['tipe_lensa']) &
-                        (df_lensa_stock['merk'] == item['merk_lensa']) &
-                        (df_lensa_stock['sph'] == item['sph_r']) &
-                        (df_lensa_stock['cyl'] == item['cyl_r']) &
-                        (df_lensa_stock['add'] == item['add_r'])
+                        (df_lensa_stock['Jenis'] == item['jenis_lensa']) &
+                        (df_lensa_stock['Tipe'] == item['tipe_lensa']) &
+                        (df_lensa_stock['Merk'] == item['merk_lensa']) &
+                        (df_lensa_stock['SPH'] == item['sph_r']) &
+                        (df_lensa_stock['CYL'] == item['cyl_r']) &
+                        (df_lensa_stock['ADD'] == item['add_r'])
                     )
                 if kondisi_kanan.any():
                     idx = kondisi_kanan.idxmax()
-                    stock_val = df_lensa_stock.at[idx, 'stock']
+                    stock_val = df_lensa_stock.at[idx, 'Stock']
                     try:
                         stock_lama = int(str(stock_val).replace(",", "").strip()) if str(stock_val).strip() else 0
                     except Exception:
@@ -315,24 +339,24 @@ def run():
             if item['status_lensa'] == "Stock":
                 if item['tipe_lensa'].lower() == 'single vision':
                     kondisi_kiri = (
-                        (df_lensa_stock['jenis'] == item['jenis_lensa']) &
-                        (df_lensa_stock['tipe'] == item['tipe_lensa']) &
-                        (df_lensa_stock['merk'] == item['merk_lensa']) &
-                        (df_lensa_stock['sph'] == item['sph_l']) &
-                        (df_lensa_stock['cyl'] == item['cyl_l'])
+                        (df_lensa_stock['Jenis'] == item['jenis_lensa']) &
+                        (df_lensa_stock['Tipe'] == item['tipe_lensa']) &
+                        (df_lensa_stock['Merk'] == item['merk_lensa']) &
+                        (df_lensa_stock['SPH'] == item['sph_l']) &
+                        (df_lensa_stock['CYL'] == item['cyl_l'])
                     )
                 else:
                     kondisi_kiri = (
-                        (df_lensa_stock['jenis'] == item['jenis_lensa']) &
-                        (df_lensa_stock['tipe'] == item['tipe_lensa']) &
-                        (df_lensa_stock['merk'] == item['merk_lensa']) &
-                        (df_lensa_stock['sph'] == item['sph_l']) &
-                        (df_lensa_stock['cyl'] == item['cyl_l']) &
-                        (df_lensa_stock['add'] == item['add_l'])
+                        (df_lensa_stock['Jenis'] == item['jenis_lensa']) &
+                        (df_lensa_stock['Tipe'] == item['tipe_lensa']) &
+                        (df_lensa_stock['Merk'] == item['merk_lensa']) &
+                        (df_lensa_stock['SPH'] == item['sph_l']) &
+                        (df_lensa_stock['CYL'] == item['cyl_l']) &
+                        (df_lensa_stock['ADD'] == item['add_l'])
                     )
                 if kondisi_kiri.any():
                     idx = kondisi_kiri.idxmax()
-                    stock_val = df_lensa_stock.at[idx, 'stock']
+                    stock_val = df_lensa_stock.at[idx, 'Stock']
                     try:
                         stock_lama = int(str(stock_val).replace(",", "").strip()) if str(stock_val).strip() else 0
                     except Exception:
@@ -355,7 +379,8 @@ def run():
                 item['status_lensa'], item['jenis_lensa'], item['tipe_lensa'], item['merk_lensa'], item['nama_lensa'],
                 item['sph_r'], item['cyl_r'], item['axis_r'], item['add_r'],
                 item['sph_l'], item['cyl_l'], item['axis_l'], item['add_l'],
-                item['harga_frame'], item['harga_lensa'], int(item['diskon']), int(item['subtotal']), user]
+                item['harga_frame'], item['harga_lensa'], item['tambahan'], int(item['diskon']), int(item['subtotal']), user
+            ]
             rows_transaksi.append([str(x) for x in row])
         try:
             append_rows(SHEET_KEY, SHEET_NAMES['transaksi'], rows_transaksi)
@@ -434,26 +459,26 @@ def run():
             if item['status_lensa'] == "Stock":
                 if item['tipe_lensa'].lower() == 'single vision':
                     kondisi_kanan = (
-                        (df_lensa_stock['jenis'] == item['jenis_lensa']) &
-                        (df_lensa_stock['tipe'] == item['tipe_lensa']) &
-                        (df_lensa_stock['merk'] == item['merk_lensa']) &
-                        (df_lensa_stock['sph'] == format_2digit(item['sph_r'])) &
-                        (df_lensa_stock['cyl'] == format_2digit(item['cyl_r']))
+                        (df_lensa_stock['Jenis'] == item['jenis_lensa']) &
+                        (df_lensa_stock['Tipe'] == item['tipe_lensa']) &
+                        (df_lensa_stock['Merk'] == item['merk_lensa']) &
+                        (df_lensa_stock['SPH'] == format_2digit(item['sph_r'])) &
+                        (df_lensa_stock['CYL'] == format_2digit(item['cyl_r']))
                     )
                 else:
                     add_r = str(item['add_r']).strip() if item['add_r'] else ""
                     kondisi_kanan = (
-                        (df_lensa_stock['jenis'] == item['jenis_lensa']) &
-                        (df_lensa_stock['tipe'] == item['tipe_lensa']) &
-                        (df_lensa_stock['merk'] == item['merk_lensa']) &
-                        (df_lensa_stock['sph'] == format_2digit(item['sph_r'])) &
-                        (df_lensa_stock['cyl'] == format_2digit(item['cyl_r'])) &
-                        (df_lensa_stock['add'] == add_r)
+                        (df_lensa_stock['Jenis'] == item['jenis_lensa']) &
+                        (df_lensa_stock['Tipe'] == item['tipe_lensa']) &
+                        (df_lensa_stock['Merk'] == item['merk_lensa']) &
+                        (df_lensa_stock['SPH'] == format_2digit(item['sph_r'])) &
+                        (df_lensa_stock['CYL'] == format_2digit(item['cyl_r'])) &
+                        (df_lensa_stock['ADD'] == add_r)
                     )
                 if kondisi_kanan.any():
                     idx = kondisi_kanan.idxmax()
                     row_excel = idx + 2
-                    stock_val = df_lensa_stock.at[idx, 'stock']
+                    stock_val = df_lensa_stock.at[idx, 'Stock']
                     try:
                         stock_lama = int(str(stock_val).replace(",", "").strip()) if str(stock_val).strip() else 0
                     except Exception:
@@ -469,26 +494,26 @@ def run():
             if item['status_lensa'] == "Stock":
                 if item['tipe_lensa'].lower() == 'single vision':
                     kondisi_kiri = (
-                        (df_lensa_stock['jenis'] == item['jenis_lensa']) &
-                        (df_lensa_stock['tipe'] == item['tipe_lensa']) &
-                        (df_lensa_stock['merk'] == item['merk_lensa']) &
-                        (df_lensa_stock['sph'] == format_2digit(item['sph_l'])) &
-                        (df_lensa_stock['cyl'] == format_2digit(item['cyl_l']))
+                        (df_lensa_stock['Jenis'] == item['jenis_lensa']) &
+                        (df_lensa_stock['Tipe'] == item['tipe_lensa']) &
+                        (df_lensa_stock['Merk'] == item['merk_lensa']) &
+                        (df_lensa_stock['SPH'] == format_2digit(item['sph_l'])) &
+                        (df_lensa_stock['CYL'] == format_2digit(item['cyl_l']))
                     )
                 else:
                     add_l = str(item['add_l']).strip() if item['add_l'] else ""
                     kondisi_kiri = (
-                        (df_lensa_stock['jenis'] == item['jenis_lensa']) &
-                        (df_lensa_stock['tipe'] == item['tipe_lensa']) &
-                        (df_lensa_stock['merk'] == item['merk_lensa']) &
-                        (df_lensa_stock['sph'] == format_2digit(item['sph_l'])) &
-                        (df_lensa_stock['cyl'] == format_2digit(item['cyl_l'])) &
-                        (df_lensa_stock['add'] == add_l)
+                        (df_lensa_stock['Jenis'] == item['jenis_lensa']) &
+                        (df_lensa_stock['Tipe'] == item['tipe_lensa']) &
+                        (df_lensa_stock['Merk'] == item['merk_lensa']) &
+                        (df_lensa_stock['SPH'] == format_2digit(item['sph_l'])) &
+                        (df_lensa_stock['CYL'] == format_2digit(item['cyl_l'])) &
+                        (df_lensa_stock['ADD'] == add_l)
                     )
                 if kondisi_kiri.any():
                     idx = kondisi_kiri.idxmax()
                     row_excel = idx + 2
-                    stock_val = df_lensa_stock.at[idx, 'stock']
+                    stock_val = df_lensa_stock.at[idx, 'Stock']
                     try:
                         stock_lama = int(str(stock_val).replace(",", "").strip()) if str(stock_val).strip() else 0
                     except Exception:
@@ -497,7 +522,7 @@ def run():
                     try:
                         col_stock = worksheet_lensa.find("Stock").col
                         worksheet_lensa.update_cell(row_excel, col_stock, stock_baru)
-                        df_lensa_stock.at[idx, 'stock'] = stock_baru
+                        df_lensa_stock.at[idx, 'Stock'] = stock_baru
                     except Exception as e:
                         st.warning(f"Gagal update stock lensa kiri: {e}")
 
