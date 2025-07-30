@@ -84,7 +84,7 @@ def run():
                 bayar = int(cleaned_input) if cleaned_input else 0
                 st.markdown(f"Nominal Diterima: Rp {bayar:,.0f}".replace(",", "."))
             with col2:
-                via = st.selectbox("Via Pembayaran", ["Cash", "TF", "Qris"], key=f"via_{id_transaksi}")
+                via = st.selectbox("Via Pembayaran", ["Cash", "Qris EDC Mandiri", "Qris EDC BCA", "Qris Statis Mandiri", "TF BCA", "TF Mandiri"], key=f"via_{id_transaksi}")
 
             if st.button(f"🔄 Update Pembayaran {id_transaksi}"):
                 if bayar <= 0:
