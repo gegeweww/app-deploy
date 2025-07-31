@@ -177,7 +177,7 @@ def run():
     # Konversi nilai add (pakai add_r, diasumsikan sama untuk L dan R)
     add_dipakai = add_r if tipe_lensa in ["Progressive", "Kryptok", "Flattop"] else ""
     if status_lensa == "Stock":
-        harga_lensa = cari_harga_lensa_stock(df_lensa, tipe_lensa, jenis_lensa, merk_lensa)
+        harga_lensa = cari_harga_lensa_stock(df_lensa, tipe_lensa, jenis_lensa, merk_lensa, sph_r, cyl_r, add_dipakai, pakai_reseller=False)
         if harga_lensa is None:
             st.warning("⚠️ Harga lensa stock tidak ditemukan!")
             st.stop()
@@ -355,7 +355,7 @@ def run():
         if st.button("💾 Simpan Pembayaran"):
             st.session_state['simpan_pembayaran'] = True
             
-        # ===================== JIKA SEMUA STOK AMAN, LANJUTKAN =====================
+    # ===================== JIKA SEMUA STOK AMAN, LANJUTKAN =====================
     if st.session_state.get('simpan_pembayaran', False):
         id_transaksi = generate_id_transaksi(SHEET_KEY, SHEET_NAMES['transaksi'], tanggal_transaksi)
         id_pembayaran = generate_id_pembayaran(SHEET_KEY, SHEET_NAMES['pembayaran'], tanggal_transaksi)
