@@ -334,11 +334,13 @@ def run():
         total = df['subtotal'].sum()
         st.dataframe(df, use_container_width=True)
 
+        # Hitung total dan pembulatan
+        total = sum([item['subtotal'] for item in st.session_state.daftar_item])
         ribuan_digit = (total // 1000) % 10
         dasar = (total // 10000) * 10000
         harga_final = dasar + 5000 if ribuan_digit >= 5 else dasar
         pembulatan = harga_final - total
-        
+                
         st.markdown(f"##### Harga: Rp {total:,.0f}")
         st.markdown(f"##### Pembulatan: Rp {pembulatan:,.0f}")
         st.markdown(f"#### 💰 Total Harga: Rp {harga_final:,.0f}")
@@ -369,6 +371,13 @@ def run():
         cyl_l = format_2digit(item['cyl_l'])
         add_l = format_2digit(item['add_l']) if item['add_l'] else ""
 
+        # Kurangi pembulatan dari item terakhir
+        for i, item in enumerate(st.session_state.daftar_item):
+            subtotal = item['subtotal']
+            if i == len(st.session_state.daftar_item) - 1:
+                subtotal = subtotal + pembulatan
+            item['subtotal_setelah_pembulatan'] = subtotal
+            
         # Simpan transaksi
         rows_transaksi = []
         for item in st.session_state.daftar_item:
@@ -377,7 +386,8 @@ def run():
                 item['status_lensa'], item['jenis_lensa'], item['tipe_lensa'], item['merk_lensa'], item['nama_lensa'],
                 item['sph_r'], item['cyl_r'], item['axis_r'], item['add_r'],
                 item['sph_l'], item['cyl_l'], item['axis_l'], item['add_l'],
-                item['harga_frame'], item['harga_lensa'], item['tambahan'], int(item['diskon']), int(item['subtotal']), int(item['subtotal']) + int(pembulatan), user
+                item['harga_frame'], item['harga_lensa'], item['tambahan'], int(item['diskon']),
+                int(item['subtotal']), int(item['subtotal_setelah_pembulatan']), user
             ]
             rows_transaksi.append([str(x) for x in row])
         try:
