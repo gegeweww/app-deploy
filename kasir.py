@@ -177,7 +177,7 @@ def run():
     # Konversi nilai add (pakai add_r, diasumsikan sama untuk L dan R)
     add_dipakai = add_r if tipe_lensa in ["Progressive", "Kryptok", "Flattop"] else ""
     if status_lensa == "Stock":
-        harga_lensa = cari_harga_lensa_stock(df_lensa, tipe_lensa, jenis_lensa, merk_lensa, sph_r, cyl_r, add_dipakai, pakai_reseller=False)
+        harga_lensa = cari_harga_lensa_stock(df_lensa, tipe_lensa, jenis_lensa, merk_lensa, sph_r, cyl_r, add_dipakai, pakai_reseller=False )
         if harga_lensa is None:
             st.warning("⚠️ Harga lensa stock tidak ditemukan!")
             st.stop()
@@ -377,7 +377,7 @@ def run():
                 item['status_lensa'], item['jenis_lensa'], item['tipe_lensa'], item['merk_lensa'], item['nama_lensa'],
                 item['sph_r'], item['cyl_r'], item['axis_r'], item['add_r'],
                 item['sph_l'], item['cyl_l'], item['axis_l'], item['add_l'],
-                item['harga_frame'], item['harga_lensa'], item['tambahan'], int(item['diskon']), int(item['subtotal']), user
+                item['harga_frame'], item['harga_lensa'], item['tambahan'], int(item['diskon']), int(item['subtotal']), int(item['subtotal']) + int(pembulatan), user
             ]
             rows_transaksi.append([str(x) for x in row])
         try:
