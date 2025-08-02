@@ -215,7 +215,7 @@ def run():
         diskon_nilai = diskon_harga
     diskon_nilai = int(diskon_nilai or 0)
     # Total Harga Setelah Diskon
-    harga_setelah_diskon = harga_frame + harga_lensa - diskon_nilai
+    harga_setelah_diskon = harga_frame + harga_lensa + tambahan - diskon_nilai
 
     # Ringkasan Harga
     st.markdown(f"##### Harga Frame: Rp {harga_frame:,.0f}")
