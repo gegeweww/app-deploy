@@ -206,8 +206,11 @@ def cari_harga_lensa_stock(df_stock, tipe, jenis, merk, sph, cyl, add, pakai_res
         return None
 
 # Cari Harga Lensa Luar Stock
-def cari_harga_lensa_luar(df, nama_lensa, sph, cyl, add, pakai_reseller=True):
+def cari_harga_lensa_luar(df, tipe, nama_lensa, sph, cyl, add, pakai_reseller=True):
     df.columns = df.columns.str.strip().str.lower().str.replace(" ", "_")
+    tipe = (tipe or "").strip().lower()
+    nama_lensa = (nama_lensa or "").strip().lower()
+    kolom_harga = 'harga_reseller' if pakai_reseller else 'harga_jual'
 
     try:
         sph = float(str(sph).replace(",", "."))
@@ -216,8 +219,11 @@ def cari_harga_lensa_luar(df, nama_lensa, sph, cyl, add, pakai_reseller=True):
 
     except ValueError:
         return None
-
-    df_filtered = df[df['nama_lensa'] == nama_lensa].copy()
+    
+    df_filtered = df[
+        (df['tipe'].str.lower() == tipe) &
+        (df['nama_lensa'].str.lower() == nama_lensa)
+    ].copy()
 
     # Tambahkan kolom prioritas: 2 = CYL & ADD cocok, 1 = CYL cocok, 0 = umum
     def calculate_priority(row):
