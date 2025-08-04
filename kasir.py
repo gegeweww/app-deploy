@@ -76,7 +76,6 @@ def run():
 
     nama = str(nama).strip().lower()
     kontak = str(kontak).strip()
-    id_pelanggan = cached_get_or_create_pelanggan_id(SHEET_KEY, SHEET_NAMES['pelanggan'], nama, kontak)
 
     if "daftar_item" not in st.session_state:
         st.session_state.daftar_item = []
@@ -355,6 +354,7 @@ def run():
             st.success(f"Kembalian: Rp {sisa:,.0f}")
 
         if st.button("💾 Simpan Pembayaran"):
+            id_pelanggan = cached_get_or_create_pelanggan_id(SHEET_KEY, SHEET_NAMES['pelanggan'], nama, kontak)
             st.session_state['simpan_pembayaran'] = True
             
     # ===================== JIKA SEMUA STOK AMAN, LANJUTKAN =====================
