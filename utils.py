@@ -209,6 +209,7 @@ def cari_harga_lensa_stock(df_stock, tipe, jenis, merk, sph, cyl, add, pakai_res
 def cari_harga_lensa_luar(df, tipe, nama_lensa, sph, cyl, add, pakai_reseller=True):
     df.columns = df.columns.str.strip().str.lower().str.replace(" ", "_")
     tipe = (tipe or "").strip().lower()
+    jenis = (jenis or "").strip().lower()
     nama_lensa = (nama_lensa or "").strip().lower()
     kolom_harga = 'harga_reseller' if pakai_reseller else 'harga_jual'
 
@@ -222,6 +223,7 @@ def cari_harga_lensa_luar(df, tipe, nama_lensa, sph, cyl, add, pakai_reseller=Tr
     
     df_filtered = df[
         (df['tipe'].str.lower() == tipe) &
+        (df['jenis'].str.lower() == jenis) &
         (df['nama_lensa'].str.lower() == nama_lensa)
     ].copy()
 
