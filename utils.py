@@ -206,7 +206,7 @@ def cari_harga_lensa_stock(df_stock, tipe, jenis, merk, sph, cyl, add, pakai_res
         return None
 
 # Cari Harga Lensa Luar Stock
-def cari_harga_lensa_luar(df, tipe, nama_lensa, sph, cyl, add, pakai_reseller=True):
+def cari_harga_lensa_luar(df, tipe, jenis, nama_lensa, sph, cyl, add, pakai_reseller=True):
     df.columns = df.columns.str.strip().str.lower().str.replace(" ", "_")
     tipe = (tipe or "").strip().lower()
     jenis = (jenis or "").strip().lower()
