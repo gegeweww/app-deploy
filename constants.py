@@ -14,4 +14,4 @@ SHEET_NAMES = {
 }
 
 # Daftar user yang bisa login
-USERS = ["Yusuf", "Gerald", "Liani"]
+USERS = ["Yusuf", "Gerald"]
