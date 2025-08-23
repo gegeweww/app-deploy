@@ -99,13 +99,14 @@ def run():
                 status_baru = "Lunas" if sisa_baru >= 0 else "Belum Lunas"
 
                 tanggal_hari_ini = datetime.now(ZoneInfo("Asia/Jakarta")).strftime("%d-%m-%Y, %H:%M:%S")
+                tanggal_bayar_str = tanggal_bayar.strftime("%d-%m-%Y")
                 id_pembayaran_baru = generate_id_pembayaran(SHEET_KEY, SHEET_NAMES['pembayaran'], datetime.now(ZoneInfo("Asia/Jakarta")))
                 user = st.session_state.get("user", "Unknown")
 
                 pembayaran_ke = df_all.shape[0] + 1
 
                 new_row = [
-                    tanggal_hari_ini, id_transaksi, id_pembayaran_baru, row['id_pelanggan'], tanggal, tanggal_bayar,
+                    tanggal_hari_ini, id_transaksi, id_pembayaran_baru, row['id_pelanggan'], tanggal, tanggal_bayar_str,
                     nama, row['no_hp'], row['metode'], via,
                     str(int(total)), str(int(bayar)), str(int(sisa_baru)), status_baru,
                     str(pembayaran_ke), user
