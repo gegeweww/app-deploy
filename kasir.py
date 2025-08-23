@@ -541,10 +541,11 @@ def run():
 
         df_pembayaran = load_pembayaran()
         pembayaran_ke = df_pembayaran[df_pembayaran['ID Transaksi'] == id_transaksi].shape[0] + 1
+        tanggal_bayar = tanggal_str
 
         pembayaran_data = [
             today, id_transaksi, id_pembayaran, id_pelanggan,
-            tanggal_str, nama, kontak, metode, via,
+            tanggal_str, tanggal_bayar, nama, kontak, metode, via,
             str(int(harga_final)), str(int(nominal)), str(int(sisa)), status,
             str(pembayaran_ke), user
         ]
