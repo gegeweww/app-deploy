@@ -79,7 +79,7 @@ def run():
 
             col1, col2 = st.columns(2)
             with col1:
-                tanggal_bayar = st.date_input("📅 Tanggal Transaksi", value=date.today(), format="DD/MM/YYYY", key=f"tanggal_{id_transaksi})
+                tanggal_bayar = st.date_input("📅 Tanggal Transaksi", value=date.today(), format="DD/MM/YYYY", key=f"tanggal_{id_transaksi}")
                 raw_input = st.text_input(f"💰 Nominal Bayar untuk {id_transaksi}", value="", key=f"bayar_{id_transaksi}")
                 cleaned_input = re.sub(r"[^0-9]", "", raw_input)
                 bayar = int(cleaned_input) if cleaned_input else 0
