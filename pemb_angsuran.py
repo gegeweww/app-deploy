@@ -79,6 +79,7 @@ def run():
 
             col1, col2 = st.columns(2)
             with col1:
+                tanggal_bayar = st.date_input("📅 Tanggal Transaksi", value=date.today(), format="DD/MM/YYYY")
                 raw_input = st.text_input(f"💰 Nominal Bayar untuk {id_transaksi}", value="", key=f"bayar_{id_transaksi}")
                 cleaned_input = re.sub(r"[^0-9]", "", raw_input)
                 bayar = int(cleaned_input) if cleaned_input else 0
@@ -97,14 +98,14 @@ def run():
                 sisa_baru = round(total_terbayar - total, 2)
                 status_baru = "Lunas" if sisa_baru >= 0 else "Belum Lunas"
 
-                tanggal_hari_ini = datetime.now(ZoneInfo("Asia/Jakarta")).strftime("%Y-%m-%d")
+                tanggal_hari_ini = datetime.now(ZoneInfo("Asia/Jakarta")).strftime("%d-%m-%Y, %H:%M:%S")
                 id_pembayaran_baru = generate_id_pembayaran(SHEET_KEY, SHEET_NAMES['pembayaran'], datetime.now(ZoneInfo("Asia/Jakarta")))
                 user = st.session_state.get("user", "Unknown")
 
                 pembayaran_ke = df_all.shape[0] + 1
 
                 new_row = [
-                    tanggal_hari_ini, id_transaksi, id_pembayaran_baru, row['id_pelanggan'], tanggal,
+                    tanggal_hari_ini, id_transaksi, id_pembayaran_baru, row['id_pelanggan'], tanggal, tanggal_bayar,
                     nama, row['no_hp'], row['metode'], via,
                     str(int(total)), str(int(bayar)), str(int(sisa_baru)), status_baru,
                     str(pembayaran_ke), user
