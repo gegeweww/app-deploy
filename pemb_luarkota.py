@@ -78,6 +78,7 @@ def run():
             col1, col2 = st.columns(2)
             with col1:
                 raw_input = st.text_input(f"💰 Nominal Bayar", value="", key=f"luar_{id_transaksi}")
+                tanggal_bayar = st.date_input("📅 Tanggal Transaksi", value=date.today(), format="DD/MM/YYYY", key=f"tanggal_{id_transaksi}")
                 cleaned_input = re.sub(r"[^0-9]", "", raw_input)
                 bayar = int(cleaned_input) if cleaned_input else 0
                 st.markdown(f"Nominal Diterima: Rp {bayar:,.0f}".replace(",", "."))
@@ -95,7 +96,7 @@ def run():
                 sisa_baru = round(total_terbayar - total, 2)
                 status_baru = "Lunas" if sisa_baru >= 0 else "Belum Lunas"
 
-                tanggal_bayar = datetime.now(ZoneInfo("Asia/Jakarta")).strftime("%d-%m-%Y")
+                tanggal_bayar_str = tanggal_bayar.strftime("%d-%m-%y)
                 timestamp = datetime.now(ZoneInfo("Asia/Jakarta")).strftime("%d-%m-%Y %H:%M:%S")
                 ke = df_all.shape[0] + 1
                 user = st.session_state.get("user", "Unknown")
@@ -103,7 +104,7 @@ def run():
                 id_pembayaran_baru = generate_id_pemb_skw(SHEET_KEY, SHEET_NAMES['pembayaran_luar_kota'], nama, tanggal)
 
                 new_row = [
-                    timestamp, tanggal, id_transaksi, id_pembayaran_baru,
+                    timestamp, tanggal, tanggal_bayar, id_transaksi, id_pembayaran_baru,
                     nama, row['metode'], via, int(total), int(bayar),
                     int(sisa_baru), ke, tanggal_bayar, status_baru, user
                 ]
