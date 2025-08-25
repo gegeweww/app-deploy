@@ -453,9 +453,9 @@ def run():
 
         df_pembayaran = load_pembayaran()
         pembayaran_ke = df_pembayaran[df_pembayaran['Id Transaksi'] == id_transaksi].shape[0] + 1
-
+        tanggal_bayar = tanggal_ambil
         pembayaran_data = [
-            today, tanggal_ambil, id_transaksi, id_pembayaran, nama, metode, via,
+            today, tanggal_ambil, tanggal_bayar, id_transaksi, id_pembayaran, nama, metode, via,
             int(total), int(nominal), int(sisa), pembayaran_ke, tanggal_bayar, status, user
         ]
         append_row(SHEET_KEY, SHEET_NAMES['pembayaran_luar_kota'], [str(x) for x in pembayaran_data])
