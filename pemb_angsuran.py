@@ -42,7 +42,7 @@ def run():
     df_belum_lunas = df_belum_lunas[df_belum_lunas['status'].str.lower() == 'belum lunas']
 
     # debug data
-    st.write("⬇️ Data Belum Lunas:", df_belum_lunas[['id_transaksi', 'nama', 'status']])
+    st.write("⬇️ Data Belum Lunas:", df_belum_lunas[['id_transaksi', 'nama', 'no_hp', 'status']])
     
     if st.button("🔄 Refresh Data"):
         st.cache_data.clear()
