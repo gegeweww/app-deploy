@@ -19,7 +19,7 @@ def run():
     Tipe_lensa_list = sorted(df_lensa['Tipe'].dropna().unique())
     SPH_list = sorted(df_lensa['SPH'].dropna().unique())
     CYL_list = sorted(df_lensa['CYL'].dropna().unique())
-    Add_list = sorted(df_lensa['Add'].dropna().unique())    
+    Add_list = sorted(df_lensa['ADD'].dropna().unique())    
 
     selected_Jenis, selected_Tipe, selected_Merk, selected_SPH, selected_CYL, selected_Add, jumlah_input = None, None, None, None, None, None, None
 
