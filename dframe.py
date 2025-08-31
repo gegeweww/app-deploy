@@ -7,7 +7,7 @@ def run():
     def show_data():
         return get_dataframe(SHEET_KEY, SHEET_NAMES['dframe'])
 
-    st.title("📦 Database Frame")
+    st.title("🕶️ Database Frame")
     df = show_data()
 
     def display_df_with_index_start_1(dataframe):

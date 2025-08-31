@@ -11,7 +11,7 @@ def run():
 
         return df_lensa, df_lensa_cepat
 
-    st.title("🕶️ Database Lensa")
+    st.title("Database Lensa")
 
     df_lensa, df_lensa_cepat = show_data()
 
