@@ -18,6 +18,7 @@ def run():
     def display_df_with_index_start_1(dataframe):
         df_display = dataframe.reset_index(drop=True)
         df_display.index = df_display.index + 1
+        df_display.index.name = "No"
         st.dataframe(df_display)
     
     tipe_option = [""] + sorted(df_lensa['Tipe'].dropna().unique())

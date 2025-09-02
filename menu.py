@@ -13,8 +13,11 @@ import logtransaksi
 import luarkota
 import pemb_luarkota
 import logluarkota
+import dashboard
+import pelanggan
 
 def show_menu():
+    
     st.sidebar.title("📦 Navigasi")
     st.sidebar.title(f"👋 Hai, {st.session_state['user']}")
     
@@ -25,6 +28,8 @@ def show_menu():
         st.rerun()
 
     menu = st.sidebar.radio("Pilih Halaman:", [
+        "Dashboard",
+        "Data Pelanggan",
         "Kasir",        
         "History Transaksi",
         "Pembayaran Angsuran",
@@ -38,8 +43,11 @@ def show_menu():
         "Input Stock Frame",
         "Input Stock Lensa"
     ])
-
-    if menu == "Data Frame":
+    if menu == "Dashboard":
+        dashboard.run()
+    if menu == "Data Pelanggan":
+        pelanggan.run()
+    elif menu == "Data Frame":
         dframe.run()
     elif menu == "Data Lensa":
         dlensa.run()
