@@ -37,13 +37,14 @@ def run():
         if not filtered_df.empty:
             st.success(f"Ditemukan {len(filtered_df)} data")
             display_df_with_index_start_1(filtered_df)
-            csv = df.drop(columns=["Harga Modal"], errors="ignore").to_csv(index=False).encode('utf-8')
-            st.download_button("⬇️ Download hasil pencarian (.csv)", data=csv, file_name='hasil_pencarian.csv', mime='text/csv')        else:
+            csv = filtered_df.drop(columns=["Harga Modal"], errors="ignore").to_csv(index=False).encode('utf-8')
+            st.download_button("⬇️ Download hasil pencarian (.csv)", data=csv, file_name='hasil_pencarian.csv', mime='text/csv')        
+        else:
             st.warning("Tidak ditemukan data yang sesuai.")
     elif reset:
         st.info("Menampilkan seluruh data")
         display_df_with_index_start_1(df)
-        csv = df.drop(columns=["Harga Modal"], errors="ignore").to_csv(index=False).encode('utf-8')
-st.download_button("⬇️ Download hasil pencarian (.csv)", data=csv, file_name='hasil_pencarian.csv', mime='text/csv')
+        csv = filtered_df.drop(columns=["Harga Modal"], errors="ignore").to_csv(index=False).encode('utf-8')
+        st.download_button("⬇️ Download hasil pencarian (.csv)", data=csv, file_name='hasil_pencarian.csv', mime='text/csv')
     else:
         display_df_with_index_start_1(df)
