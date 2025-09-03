@@ -11,6 +11,7 @@ def run():
     df = show_data()
 
     def display_df_with_index_start_1(dataframe):
+        df_display = dataframe.drop(columns=["Harga Modal"], errors="ignore")
         df_display = dataframe.reset_index(drop=True)
         df_display.index = df_display.index + 1
         st.dataframe(df_display)
