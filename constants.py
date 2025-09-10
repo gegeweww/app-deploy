@@ -3,6 +3,7 @@ SHEET_NAMES = {
     'dframe': 'MFrame',
     'dlensa': 'MLensa',
     'lensacepat': 'Perlu Habis',
+    'hargalensa': 'Harga Lensa',
     'logframe': 'logframe',
     'loglensa': 'loglensa',
     'transaksi': 'Transaksi',

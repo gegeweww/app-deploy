@@ -8,19 +8,26 @@ def run():
     def show_data():
         df_lensa = get_dataframe(SHEET_KEY, SHEET_NAMES['dlensa'])
         df_lensa_cepat = get_dataframe(SHEET_KEY, SHEET_NAMES['lensacepat'])
+        df_harga = get_dataframe(SHEET_KEY, SHEET_NAMES['hargalensa'])
 
-        return df_lensa, df_lensa_cepat
+        return df_lensa, df_lensa_cepat, df_harga
 
     st.title("Database Lensa")
 
-    df_lensa, df_lensa_cepat = show_data()
+    df_lensa, df_lensa_cepat, df_harga = show_data()
+    
+    st.header("Harga Lensa", divider="rainbow")
+    st.dataframe(df_harga.reset_index(drop=True).to_dict("records"), use_container_width=True)
+
 
     def display_df_with_index_start_1(dataframe):
-        df_display = dataframe.reset_index(drop=True)
+        df_display = dataframe.drop(columns=["Harga Modal"], errors="ignore")  
+        df_display = df_display.reset_index(drop=True)
         df_display.index = df_display.index + 1
         df_display.index.name = "No"
         st.dataframe(df_display)
     
+    st.header("Stock Lensa", divider="rainbow")
     tipe_option = [""] + sorted(df_lensa['Tipe'].dropna().unique())
     jenis_option = [""] + sorted(df_lensa['Jenis'].dropna().unique())
     merk_option = [""] + sorted(df_lensa['Merk'].dropna().unique())
@@ -50,7 +57,7 @@ def run():
             st.success(f"Ditemukan {len(filtered_df)} data")
             display_df_with_index_start_1(filtered_df)
 
-            csv = filtered_df.to_csv(index=False).encode('utf-8')
+            csv = filtered_df.drop(columns=["Harga Modal"], errors="ignore").to_csv(index=False).encode('utf-8')
             st.download_button("⬇️ Download hasil pencarian (.csv)", data=csv, file_name='hasil_pencarian_lensa.csv', mime='text/csv')
         else:
             st.warning("Tidak ditemukan data yang sesuai.")
@@ -58,7 +65,7 @@ def run():
         st.info("Menampilkan seluruh data")
         display_df_with_index_start_1(df_lensa)
 
-        csv = df_lensa.to_csv(index=False).encode('utf-8')
+        csv = df_lensa.drop(columns=["Harga Modal"], errors="ignore").to_csv(index=False).encode('utf-8')
         st.download_button("⬇️ Download seluruh data (.csv)", data=csv, file_name='database_lensa.csv', mime='text/csv')
     else:
         display_df_with_index_start_1(df_lensa)
@@ -76,7 +83,8 @@ def run():
             st.warning(f"Ditemukan {len(df_stock_rendah)} lensa dengan stock ≤ 1")
             display_df_with_index_start_1(df_stock_rendah)
 
-            csv_stock = df_stock_rendah.to_csv(index=False).encode('utf-8')
+            csv_stock = df_stock_rendah.drop(columns=["Harga Modal"], errors="ignore").to_csv(index=False).encode('utf-8')
+
             st.download_button("⬇️ Download lensa stock rendah (.csv)", data=csv_stock, file_name='stock_lensa_rendah.csv', mime='text/csv')
         else:
             st.success("Stock Lensa Aman")
