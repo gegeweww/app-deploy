@@ -14,14 +14,14 @@ def run():
         st.warning("Data pembayaran tidak ditemukan.")
         st.stop()
 
-    if 'Tanggal' not in df.columns or 'Nominal Pembayaran' not in df.columns:
-        st.error("Kolom 'Tanggal' atau 'Nominal Pembayaran' tidak ditemukan.")
+    if 'Tanggal Bayar' not in df.columns or 'Nominal Pembayaran' not in df.columns:
+        st.error("Kolom 'Tanggal Bayar' atau 'Nominal Pembayaran' tidak ditemukan.")
         st.stop()
 
     df['Nominal Pembayaran'] = (df['Nominal Pembayaran'].astype(int))
-    # --- Konversi tanggal ke datetime dan ambil tahun ---
-    df['Tanggal'] = pd.to_datetime(df['Tanggal'], dayfirst=True, errors='coerce')
-    df['Tahun'] = df['Tanggal'].dt.year
+    # --- Konversi Tanggal Bayar ke datetime dan ambil tahun ---
+    df['Tanggal Bayar'] = pd.to_datetime(df['Tanggal Bayar'], dayfirst=True, errors='coerce')
+    df['Tahun'] = df['Tanggal Bayar'].dt.year
     
     bulan_map = {
     'January': 'Januari',
@@ -36,7 +36,7 @@ def run():
     'October': 'Oktober',
     'November': 'November',
     'December': 'Desember'}
-    df['Bulan'] = df['Tanggal'].dt.strftime('%B').map(bulan_map)
+    df['Bulan'] = df['Tanggal Bayar'].dt.strftime('%B').map(bulan_map)
     
     bulan_order = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember']
     

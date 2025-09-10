@@ -74,5 +74,8 @@ def run():
     if search_nama:
         df_filtered = df_filtered[df_filtered['nama'].str.contains(search_nama, case=False, na=False)]
     if not df_filtered.empty:
-        df_filtered['tanggal'] = df_filtered['tanggal']
-    st.dataframe(df_filtered.drop(columns=['bulan'], errors='ignore').reset_index(drop=True), use_container_width=True)
+        df_display = df_filtered.drop(columns=['bulan'], errors='ignore').reset_index(drop=True)
+        df_display.index = df_display.index + 1
+        df_display.index.name = "No"
+        df_display.columns = [col.replace('_', ' ').title() for col in df_display.columns]
+        st.dataframe(df_display, use_container_width=True)
