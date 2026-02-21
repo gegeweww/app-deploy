@@ -4,7 +4,13 @@ from google.oauth2.service_account import Credentials
 from constants import SHEET_NAMES
 import streamlit as st
 from zoneinfo import ZoneInfo
+from supabase import create_client
 
+@st.cache_resource
+def get_supabase():
+    url = st.secrets["supabase"]["url"]
+    key = st.secrets["supabase"]["anon_key"]
+    return create_client(url, key)
 # Font
 def set_font():
     st.markdown("""

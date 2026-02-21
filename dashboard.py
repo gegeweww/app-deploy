@@ -2,118 +2,113 @@ import streamlit as st
 import pandas as pd
 import plotly.express as px
 from datetime import datetime
-from constants import SHEET_KEY, SHEET_NAMES
-from utils import get_dataframe  
+from utils import get_supabase
 
 def run():
+    st.title("📊 Dashboard Penjualan Optik")
 
-    st.title("Dashboard Penjualan")
-    df = get_dataframe(SHEET_KEY, SHEET_NAMES['pembayaran'])
+    supabase = get_supabase()
 
-    if df is None or df.empty:
+    response = supabase.table("pembayaran").select("*").execute()
+
+    if not response.data:
         st.warning("Data pembayaran tidak ditemukan.")
         st.stop()
 
-    if 'Tanggal Bayar' not in df.columns or 'Nominal Pembayaran' not in df.columns:
-        st.error("Kolom 'Tanggal Bayar' atau 'Nominal Pembayaran' tidak ditemukan.")
-        st.stop()
+    df = pd.DataFrame(response.data)
 
-    df['Nominal Pembayaran'] = (df['Nominal Pembayaran'].astype(int))
-    # --- Konversi Tanggal Bayar ke datetime dan ambil tahun ---
-    df['Tanggal Bayar'] = pd.to_datetime(df['Tanggal Bayar'], dayfirst=True, errors='coerce')
-    df['Tahun'] = df['Tanggal Bayar'].dt.year
-    
-    bulan_map = {
-    'January': 'Januari',
-    'February': 'Februari',
-    'March': 'Maret',
-    'April': 'April',
-    'May': 'Mei',
-    'June': 'Juni',
-    'July': 'Juli',
-    'August': 'Agustus',
-    'September': 'September',
-    'October': 'Oktober',
-    'November': 'November',
-    'December': 'Desember'}
-    df['Bulan'] = df['Tanggal Bayar'].dt.strftime('%B').map(bulan_map)
-    
-    bulan_order = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember']
-    
-    # --- Filter tahun (slicer) ---
-    tahun_list = sorted(df['Tahun'].dropna().unique())
+    required_cols = ["tanggal_bayar", "nominal_pembayaran", "user_name"]
+    for col in required_cols:
+        if col not in df.columns:
+            st.error(f"Kolom {col} tidak ditemukan di Supabase.")
+            st.stop()
+
+    # Bersihkan data
+    df["nominal_pembayaran"] = pd.to_numeric(
+        df["nominal_pembayaran"], errors="coerce"
+    ).fillna(0)
+
+    df["tanggal_bayar"] = pd.to_datetime(df["tanggal_bayar"], errors="coerce")
+    df = df.dropna(subset=["tanggal_bayar"])
+
+    df["tahun"] = df["tanggal_bayar"].dt.year
+    df["bulan"] = df["tanggal_bayar"].dt.month
+
+    now = datetime.now()
+    bulan_sekarang = now.month
+    tahun_sekarang = now.year
+
+    # =========================
+    # KPI SECTION
+    # =========================
+    df_bulan_ini = df[
+        (df["tahun"] == tahun_sekarang) &
+        (df["bulan"] == bulan_sekarang)
+    ]
+
+    total_bulan_ini = df_bulan_ini["nominal_pembayaran"].sum()
+    total_tahun_ini = df[df["tahun"] == tahun_sekarang]["nominal_pembayaran"].sum()
+    total_transaksi = len(df_bulan_ini)
+
+    col1, col2, col3, = st.columns(3)
+
+    col1.metric("💰 Bulan Ini", f"Rp {total_bulan_ini:,.0f}")
+    col2.metric("📆 Tahun Ini", f"Rp {total_tahun_ini:,.0f}")
+    col3.metric("🧾 Transaksi Bulan Ini", total_transaksi)
+
+    st.divider()
+
+    # =========================
+    # GRAFIK BULANAN
+    # =========================
+    tahun_list = sorted(df["tahun"].unique())
     tahun_pilih = st.selectbox("Pilih Tahun", tahun_list, index=len(tahun_list)-1)
 
-    # --- Filter data ---
-    df_tahun = df[df['Tahun'] == tahun_pilih].copy()
-    
-    c1, c2 = st.columns([3,1.4])
-    with c1:
-        # --- Agregasi per bulan ---
-        df_chart = df_tahun.groupby('Bulan', as_index=False)['Nominal Pembayaran'].sum()
-        df_chart['Bulan'] = pd.Categorical(df_chart['Bulan'], categories=bulan_order, ordered=True)
-        df_chart = df_chart.sort_values('Bulan')
+    df_tahun = df[df["tahun"] == tahun_pilih]
 
-        # --- Plot ---
-        fig = px.line(
-            df_chart,
-            x="Bulan",
-            y="Nominal Pembayaran",
-            markers=True,
-            title=f"Grafik Penjualan {tahun_pilih}"
+    df_chart = (
+        df_tahun
+        .groupby("bulan", as_index=False)["nominal_pembayaran"]
+        .sum()
+        .sort_values("bulan")
+    )
+
+    fig = px.line(
+        df_chart,
+        x="bulan",
+        y="nominal_pembayaran",
+        markers=True,
+        title=f"📈 Grafik Penjualan {tahun_pilih}"
+    )
+
+    fig.update_layout(
+        yaxis=dict(
+            tickprefix="Rp ",
+            tickformat=",.0f",
+            title="Pemasukan"
         )
-        fig.update_layout(
-            xaxis=dict(
-                tickangle=-90
-            ),
-            yaxis=dict(
-                tickprefix="Rp ",
-                tickformat=",.0f",   # pakai koma ribuan
-                title="Pemasukan"
-            )
-        )
-        # Format tooltip
-        fig.update_traces(
-            hovertemplate="Bulan: %{x}<br>Nominal: Rp %{y:,.0f}<extra></extra>"
-        )
-        st.plotly_chart(fig, use_container_width=True, height=400)
-    
-    with c2:
-        # --- Ambil bulan & tahun sekarang ---
-        today = datetime.now()
-        bulan_sekarang_eng = today.strftime("%B")
-        bulan_sekarang = bulan_map[bulan_sekarang_eng]
-        tahun_sekarang = today.year
+    )
 
-        # --- Filter data bulan sekarang ---
-        df_bulan_ini = df_tahun[df_tahun['Bulan'] == bulan_sekarang]
+    fig.update_traces(
+        hovertemplate="Bulan: %{x}<br>Nominal: Rp %{y:,.0f}<extra></extra>"
+    )
 
-        if not df_bulan_ini.empty:
-            total_bulan = df_bulan_ini['Nominal Pembayaran'].sum()
-            total_bulan_fmt = f"Rp {total_bulan:,.0f}".replace(",", ".")
-        else:
-            total_bulan_fmt = "Rp 0"
+    st.plotly_chart(fig, use_container_width=True)
 
-        # Box info
-        total_bulan = df_bulan_ini['Nominal Pembayaran'].sum() if not df_bulan_ini.empty else 0
-        total_bulan_fmt = f"Rp {total_bulan:,.0f}".replace(",", ".")
+    st.divider()
 
-        st.markdown(
-            f"""
-            <div style="
-                display: flex; 
-                flex-direction: column; 
-                justify-content: center; 
-                align-items: center; 
-                height: 400px;
-                border-radius: 15px; 
-                background-color: transparent;
-                border: 2px solid #404040;
-                padding: 20px;
-                ">
-                <h4>Penjualan {bulan_sekarang} {tahun_pilih}</h4>
-                <h4>{total_bulan_fmt}</h4>
-            </div>
-            """,
-            unsafe_allow_html=True
-        )
+    # =========================
+    # TRANSAKSI TERBARU
+    # =========================
+    st.subheader("🕒 Transaksi Terbaru")
+
+    df_latest = df.sort_values("tanggal_bayar", ascending=False).head(5)
+    df_latest_display = df_latest[[
+        "tanggal_bayar",
+        "id_transaksi",
+        "nama",
+        "nominal_pembayaran",
+        "user_name"
+    ]]
+
+    st.dataframe(df_latest_display, use_container_width=True)
