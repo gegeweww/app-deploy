@@ -11,6 +11,7 @@ def get_supabase():
     url = st.secrets["supabase"]["url"]
     key = st.secrets["supabase"]["anon_key"]
     return create_client(url, key)
+
 # Font
 def set_font():
     st.markdown("""
@@ -57,12 +58,31 @@ def get_dataframe(sheet_key: str, sheet_name: str):
 
     return df
 
+# Baca isi database
+def get_dataframe_supabase(table_name):
+    supabase = get_supabase()
+    response = supabase.table(table_name).select("*").execute()
+    return pd.DataFrame(response.data)
+
+def get_table_raw(table_name):
+    supabase = get_supabase()
+    response = supabase.table(table_name).select("*").execute()
+    return pd.DataFrame(response.data)
+
+@st.cache_data(ttl=60)
+def get_table_cached(table_name):
+    return get_table_raw(table_name)
 
 # Tambahkan satu baris ke sheet
 def append_row(sheet_key, sheet_name, data_row):
     client = authorize_gspread()
     sheet = client.open_by_key(sheet_key).worksheet(sheet_name)
     sheet.append_row(data_row)
+  
+# Tambahkan satu baris ke tabel supabase  
+def insert_row_supabase(table_name, data_dict):
+    supabase = get_supabase()
+    supabase.table(table_name).insert(data_dict).execute()
 
 # Tambahkan beberapa baris ke sheet
 def append_rows(sheet_key, sheet_name, data_rows):

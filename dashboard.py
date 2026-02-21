@@ -2,20 +2,16 @@ import streamlit as st
 import pandas as pd
 import plotly.express as px
 from datetime import datetime
-from utils import get_supabase
+from utils import get_table_cached
 
 def run():
     st.title("📊 Dashboard Penjualan Optik")
 
-    supabase = get_supabase()
+    df = get_table_cached("pembayaran")
 
-    response = supabase.table("pembayaran").select("*").execute()
-
-    if not response.data:
-        st.warning("Data pembayaran tidak ditemukan.")
-        st.stop()
-
-    df = pd.DataFrame(response.data)
+    if df.empty:
+        st.warning("Data pembayaran belum tersedia.")
+        return
 
     required_cols = ["tanggal_bayar", "nominal_pembayaran", "user_name"]
     for col in required_cols:

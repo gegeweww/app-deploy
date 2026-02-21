@@ -1,15 +1,25 @@
-
-from utils import get_dataframe
-from constants import SHEET_KEY, SHEET_NAMES
 import streamlit as st
+import pandas as pd
+from utils import get_table_cached
 
 def run():
-    @st.cache_data(ttl=300)
-    def show_data():
-        return get_dataframe(SHEET_KEY, SHEET_NAMES["logframe"])
-
     st.title("📋 Log Aktivitas Frame")
-    st.write("Menampilkan seluruh log aktivitas untuk produk Frame.")
 
-    df = show_data()
-    st.dataframe(df)
+    df = get_table_cached("log_frames")
+
+    if df.empty:
+        st.warning("Belum ada log frame.")
+        return
+
+    if "timestamp_log" in df.columns:
+        df["timestamp_log"] = pd.to_datetime(df["timestamp_log"], errors="coerce")
+        df = df.sort_values("timestamp_log", ascending=False)
+
+    # Drop kolom id
+    if "id" in df.columns:
+        df = df.drop(columns=["id"])
+
+    df = df.reset_index(drop=True)
+    df.index = df.index + 1
+
+    st.dataframe(df, use_container_width=True)

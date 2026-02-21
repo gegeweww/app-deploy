@@ -1,69 +1,107 @@
 import streamlit as st
 import pandas as pd
-from utils import get_dataframe
-from constants import SHEET_KEY, SHEET_NAMES
+from utils import get_table_cached
+
 
 def run():
-    @st.cache_data(ttl=300)
-    def show_data():
-        data_transaksi = get_dataframe(SHEET_KEY, SHEET_NAMES['transaksi'])
-        data_pelanggan = get_dataframe(SHEET_KEY, SHEET_NAMES['pelanggan'])
-    
-        return data_transaksi, data_pelanggan
-    data_transaksi, data_pelanggan = show_data()    
-    
     st.title("Database Pelanggan")
-    # 🔎 filter otomatis
-    nama = st.text_input("Cari Nama Pelanggan")
-    
-    data_transaksi = data_transaksi.merge(
-        data_pelanggan[["ID Pelanggan", "No HP"]],
-        on="ID Pelanggan",
+
+    # ==============================
+    # Ambil Data dari Supabase
+    # ==============================
+    df_transaksi = get_table_cached("transaksi_detail")
+    df_pelanggan = get_table_cached("pelanggan")
+
+    if df_transaksi.empty or df_pelanggan.empty:
+        st.warning("Data belum tersedia.")
+        return
+
+    # Merge pelanggan
+    df = df_transaksi.merge(
+        df_pelanggan[["id_pelanggan", "no_hp"]],
+        on="id_pelanggan",
         how="left"
     )
-    
-    lens_cols = ["SPH R", "CYL R", "Axis R", "Add R",
-                 "SPH L", "CYL L", "Axis L", "Add L"]
-    
+
+    # Pastikan tanggal datetime
+    df["tanggal"] = pd.to_datetime(df["tanggal"], errors="coerce")
+
+    lens_cols = [
+        "sph_r", "cyl_r", "axis_r", "add_r",
+        "sph_l", "cyl_l", "axis_l", "add_l"
+    ]
+
+    # Bersihkan NaN
+    for col in lens_cols:
+        df[col] = df[col].astype(str).fillna("")
+
     results = []
-    # Group berdasarkan ID Pelanggan
-    for cust_id, group in data_transaksi.groupby("ID Pelanggan"):
-        # ambil data unik hanya berdasarkan ukuran
-        unique_sizes = group[lens_cols].drop_duplicates()
 
-        for _, ukuran in unique_sizes.iterrows():
-            # filter transaksi dengan ukuran ini
-            mask = group[lens_cols].eq(ukuran).all(axis=1)
-            transaksi_match = group[mask]
+    # ==============================
+    # Proses Grouping Ukuran
+    # ==============================
+    for cust_id, group in df.groupby("id_pelanggan"):
 
-            # ambil transaksi terakhir
-            last_row = transaksi_match.sort_values("Tanggal").iloc[-1]
-            
+        group = group.dropna(subset=["tanggal"])
+        if group.empty:
+            continue
+
+        ukuran_group = group.groupby(lens_cols)
+
+        for _, transaksi_group in ukuran_group:
+
+            if transaksi_group.empty:
+                continue
+
+            last_row = transaksi_group.sort_values("tanggal").iloc[-1]
+
             def format_mata(sph, cyl, axis):
-                # kalau cyl == "0.00" atau "0" → ga ditampilin
-                if str(cyl) in ["0.00", "0", "0.0"]:
+                if cyl in ["0", "0.0", "0.00", "", "None", None]:
                     return f"{sph}"
                 return f"{sph} / {cyl} × {axis}"
-            
-            data_transaksi["Mata R"] = data_transaksi.apply(lambda x: format_mata(x["SPH R"], x["CYL R"], x["Axis R"]), axis=1)
-            data_transaksi["Mata L"] = data_transaksi.apply(lambda x: format_mata(x["SPH L"], x["CYL L"], x["Axis L"]), axis=1)
 
             results.append({
                 "ID Pelanggan": cust_id,
-                "Nama": last_row["Nama"],
-                "No HP": last_row["No HP"],
-                "Mata R": format_mata(last_row["SPH R"], last_row["CYL R"], last_row["Axis R"]),
-                "Mata L": format_mata(last_row["SPH L"], last_row["CYL L"], last_row["Axis L"]),
-                "ADD": ukuran["Add R"],
-                "Tanggal Terakhir": last_row["Tanggal"]
+                "Nama": last_row["nama"],
+                "No HP": last_row["no_hp"],
+                "Mata R": format_mata(last_row["sph_r"], last_row["cyl_r"], last_row["axis_r"]),
+                "Mata L": format_mata(last_row["sph_l"], last_row["cyl_l"], last_row["axis_l"]),
+                "ADD": last_row["add_r"],
+                "Tanggal Terakhir": last_row["tanggal"]
             })
-            
-    df_pelanggan = pd.DataFrame(results).reset_index(drop=True)
-    df_pelanggan.index = df_pelanggan.index + 1
-    df_pelanggan.index.name = "No"
-    
-    if nama:  # kalau ada input
-        df_filtered = df_pelanggan[df_pelanggan["Nama"].str.contains(nama, case=False, na=False)]
-        st.dataframe(df_filtered)
-    else:  # kalau kosong → tampilkan semua
-        st.dataframe(df_pelanggan)
+
+    if not results:
+        st.warning("Belum ada data ukuran.")
+        return
+
+    df_final = pd.DataFrame(results)
+
+    # Urutkan terbaru dulu
+    df_final = df_final.sort_values("ID Pelanggan", ascending=True)
+
+    # ==============================
+    # 🔎 SEARCH SECTION (No Enter Needed)
+    # ==============================
+
+    search = st.text_input(
+        "Cari Nama atau No HP",
+        placeholder="Ketik untuk mencari..."
+    )
+
+    if st.button("Reset"):
+        search = ""
+
+    if search:
+        df_final = df_final[
+            df_final["Nama"].str.contains(search, case=False, na=False) |
+            df_final["No HP"].str.contains(search, case=False, na=False)
+        ]
+
+    # ==============================
+    # Format Index
+    # ==============================
+    df_final = df_final.reset_index(drop=True)
+    df_final.index = df_final.index + 1
+    df_final.index.name = "No"
+
+    st.dataframe(df_final, use_container_width=True)
