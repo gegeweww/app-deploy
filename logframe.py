@@ -21,5 +21,10 @@ def run():
 
     df = df.reset_index(drop=True)
     df.index = df.index + 1
+    
+    df.columns = [
+        col.replace('_', ' ').title()
+        for col in df.columns
+    ]
 
     st.dataframe(df, use_container_width=True)

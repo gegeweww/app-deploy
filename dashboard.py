@@ -1,5 +1,6 @@
 import streamlit as st
 import pandas as pd
+import numpy as np
 import plotly.express as px
 from datetime import datetime
 from utils import get_table_cached
@@ -48,8 +49,8 @@ def run():
 
     col1, col2, col3, = st.columns(3)
 
-    col1.metric("💰 Bulan Ini", f"Rp {total_bulan_ini:,.0f}")
-    col2.metric("📆 Tahun Ini", f"Rp {total_tahun_ini:,.0f}")
+    col1.metric("💰 Bulan Ini", f"Rp {total_bulan_ini:,.0f}".replace(",","."))
+    col2.metric("📆 Tahun Ini", f"Rp {total_tahun_ini:,.0f}".replace(",","."))
     col3.metric("🧾 Transaksi Bulan Ini", total_transaksi)
 
     st.divider()
@@ -68,7 +69,9 @@ def run():
         .sum()
         .sort_values("bulan")
     )
-
+    df_chart["nominal_format"] = df_chart["nominal_pembayaran"] \
+        .apply(lambda x: f"Rp {x:,.0f}".replace(",", "."))
+        
     fig = px.line(
         df_chart,
         x="bulan",
@@ -76,19 +79,34 @@ def run():
         markers=True,
         title=f"📈 Grafik Penjualan {tahun_pilih}"
     )
-
-    fig.update_layout(
-        yaxis=dict(
-            tickprefix="Rp ",
-            tickformat=",.0f",
-            title="Pemasukan"
-        )
+    
+    fig.update_yaxes(
+        tickformat=",.0f",
+        separatethousands=True
     )
 
     fig.update_traces(
-        hovertemplate="Bulan: %{x}<br>Nominal: Rp %{y:,.0f}<extra></extra>"
+        hovertemplate="Bulan: %{x}<br>Nominal: %{customdata}<extra></extra>",
+        customdata=df_chart["nominal_format"]
     )
+    # Tentukan tick values otomatis
+    y_max = df_chart["nominal_pembayaran"].max()
+    tick_vals = np.linspace(0, y_max, 6)
 
+    # Format ke rupiah Indonesia
+    tick_text = [
+        f"Rp {int(val):,}".replace(",", ".")
+        for val in tick_vals
+    ]
+
+    fig.update_layout(
+        yaxis=dict(
+            tickvals=tick_vals,
+            ticktext=tick_text,
+            title="Pemasukan"
+        ),
+        separators = ".,"
+    )
     st.plotly_chart(fig, use_container_width=True)
 
     st.divider()
@@ -106,5 +124,12 @@ def run():
         "nominal_pembayaran",
         "user_name"
     ]]
-
+    
+    df_latest_display["nominal_pembayaran"] = df_latest_display["nominal_pembayaran"] \
+        .apply(lambda x: f"Rp {x:,.0f}".replace(",", "."))
+        
+    df_latest_display.columns = [
+        col.replace('_', ' ').title()
+        for col in df_latest_display.columns
+    ]
     st.dataframe(df_latest_display, use_container_width=True)

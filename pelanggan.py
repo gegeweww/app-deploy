@@ -56,8 +56,15 @@ def run():
             last_row = transaksi_group.sort_values("tanggal").iloc[-1]
 
             def format_mata(sph, cyl, axis):
+                # Bersihkan axis biar tanpa desimal
+                try:
+                    axis = str(int(float(axis))) if axis not in ["", None, "None"] else ""
+                except:
+                    axis = str(axis)
+
                 if cyl in ["0", "0.0", "0.00", "", "None", None]:
                     return f"{sph}"
+                
                 return f"{sph} / {cyl} × {axis}"
 
             results.append({
@@ -66,7 +73,7 @@ def run():
                 "No HP": last_row["no_hp"],
                 "Mata R": format_mata(last_row["sph_r"], last_row["cyl_r"], last_row["axis_r"]),
                 "Mata L": format_mata(last_row["sph_l"], last_row["cyl_l"], last_row["axis_l"]),
-                "ADD": last_row["add_r"],
+                "Add": last_row["add_r"],
                 "Tanggal Terakhir": last_row["tanggal"]
             })
 
