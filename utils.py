@@ -1,5 +1,6 @@
 import gspread
 import pandas as pd
+from datetime import datetime, timedelta
 from google.oauth2.service_account import Credentials
 from constants import SHEET_NAMES
 import streamlit as st
@@ -323,9 +324,6 @@ def buat_loglensa_status(source: str, mode=None, status_lensa=None, jenis=None, 
             return 'terjual', f'terjual dalam transaksi: {id_transaksi}, Nama: {nama}'
         
 def catat_logframe(sheet_key, sheet_name, merk, kode, source, mode=None, status_frame=None, jumlah_input=None, stock_lama=None, stock_baru=None, id_transaksi=None, nama=None, user="Unknown"):
-    from datetime import datetime, timedelta
-    import pandas as pd
-
     status_log, keterangan = buat_logframe_status(
         source=source,
         mode=mode,
@@ -377,6 +375,99 @@ def catat_logframe(sheet_key, sheet_name, merk, kode, source, mode=None, status_
             row = [timestamp_str, merk, kode, status_log, keterangan, user]
             append_row(sheet_key, sheet_name, row)
 
+# Versi supabase
+def catat_logframe_supabase(
+    merk,
+    kode,
+    source,
+    mode=None,
+    status_frame=None,
+    jumlah_input=None,
+    stock_lama=None,
+    stock_baru=None,
+    id_transaksi=None,
+    nama=None,
+    user="Unknown"
+):
+    """
+    Versi Supabase dari catat_logframe (mengikuti logika lama)
+    """
+
+    status_log, keterangan = buat_logframe_status(
+        source=source,
+        mode=mode,
+        status_frame=status_frame,
+        merk=merk,
+        kode=kode,
+        jumlah_input=jumlah_input,
+        stock_lama=stock_lama,
+        stock_baru=stock_baru,
+        id_transaksi=id_transaksi,
+        nama=nama
+    )
+
+    if not status_log or not keterangan:
+        return
+
+    supabase = get_supabase()
+
+    timestamp = datetime.now()
+    timestamp_str = timestamp.strftime("%Y-%m-%d %H:%M:%S")
+
+    # ==============================
+    # CEK DUPLICATE FRAME LOG DI SUPABASE
+    # ==============================
+
+    response = supabase.table("log_frames") \
+        .select("*") \
+        .eq("merk", merk) \
+        .eq("kode", kode) \
+        .execute()
+
+    df_log = pd.DataFrame(response.data)
+
+    duplicate = False
+
+    if not df_log.empty:
+
+        # Untuk transaksi kasir → cek id_transaksi
+        if source == "kasir" and id_transaksi:
+            duplicate = df_log["keterangan"].str.contains(
+                id_transaksi, na=False
+            ).any()
+
+        # Untuk iframe → cek dalam 5 menit terakhir
+        elif source == "iframe":
+            five_min_ago = timestamp - timedelta(minutes=5)
+
+        df_log["timestamp_log"] = pd.to_datetime(
+            df_log["timestamp_log"],
+            errors="coerce"
+        )
+
+        df_log = df_log.dropna(subset=["timestamp_log"])
+
+        mask = (
+            (df_log["status"] == status_log) &
+            (df_log["keterangan"] == keterangan) &
+            (df_log["timestamp_log"] >= five_min_ago)
+        )
+
+        duplicate = mask.any()
+
+    # ==============================
+    # INSERT JIKA TIDAK DUPLICATE
+    # ==============================
+
+    if not duplicate:
+        supabase.table("log_frames").insert({
+            "timestamp_log": timestamp_str,
+            "merk": merk,
+            "kode": kode,
+            "status": status_log,
+            "keterangan": keterangan,
+            "user_name": user
+        }).execute()
 
 def catat_loglensa(sheet_key, sheet_name, jenis, tipe, merk, sph, cyl, add, source, mode=None, status_lensa=None, jumlah_input=None, stock_lama=None, stock_baru=None, id_transaksi=None, nama=None, user="Unknown"):
     from datetime import datetime, timedelta
@@ -442,3 +533,129 @@ def catat_loglensa(sheet_key, sheet_name, jenis, tipe, merk, sph, cyl, add, sour
             # If there's any error (e.g., sheet empty), just add the log entry
             row = [timestamp_str, tipe, merk, jenis, sph, cyl, add, status_log, keterangan, user]
             append_row(sheet_key, sheet_name, row)
+            
+# Versi loglensa Supabase
+def buat_loglensa_status(
+    source: str,
+    mode=None,
+    status_lensa=None,
+    jenis=None,
+    tipe=None,
+    merk=None,
+    sph=None,
+    cyl=None,
+    add=None,
+    stock_lama=None,
+    stock_baru=None,
+    id_transaksi=None,
+    nama=None,
+    jumlah_input=None
+):
+    if source == "ilensa":
+        return "masuk", f"Tambah stock sebanyak {jumlah_input}, stock lama: {stock_lama}, stock baru: {stock_baru}"
+
+    elif source in ["kasir", "luarkota"]:
+        if status_lensa == "Stock":
+            return "terjual", f"Terjual dalam transaksi: {id_transaksi}, Nama: {nama}"
+
+    return None, None
+
+def catat_loglensa_supabase(
+    jenis,
+    tipe,
+    merk,
+    sph,
+    cyl,
+    add_power,
+    source,
+    mode=None,
+    status_lensa=None,
+    jumlah_input=None,
+    stock_lama=None,
+    stock_baru=None,
+    id_transaksi=None,
+    nama=None,
+    user="Unknown"
+):
+
+    status_log, keterangan = buat_loglensa_status(
+        source=source,
+        mode=mode,
+        status_lensa=status_lensa,
+        jenis=jenis,
+        tipe=tipe,
+        merk=merk,
+        sph=sph,
+        cyl=cyl,
+        add=add_power,
+        jumlah_input=jumlah_input,
+        stock_lama=stock_lama,
+        stock_baru=stock_baru,
+        id_transaksi=id_transaksi,
+        nama=nama
+    )
+
+    if not status_log or not keterangan:
+        return
+
+    supabase = get_supabase()
+    timestamp = datetime.now()
+    five_min_ago = timestamp - timedelta(minutes=5)
+
+    # ==============================
+    # CEK DUPLICATE
+    # ==============================
+
+    response = supabase.table("log_lensa") \
+        .select("*") \
+        .eq("merk", merk) \
+        .eq("jenis", jenis) \
+        .eq("tipe", tipe) \
+        .eq("sph", str(sph)) \
+        .eq("cyl", str(cyl)) \
+        .eq("add_power", str(add_power)) \
+        .execute()
+
+    df_log = pd.DataFrame(response.data)
+    duplicate = False
+
+    if not df_log.empty:
+
+        # Duplicate untuk kasir / luarkota
+        if source in ["kasir", "luarkota"] and id_transaksi:
+            duplicate = df_log["keterangan"].str.contains(
+                id_transaksi, na=False
+            ).any()
+
+        # Duplicate untuk ilensa (5 menit)
+        elif source == "ilensa":
+
+            df_log["timestamp_log"] = pd.to_datetime(
+                df_log["timestamp_log"], errors="coerce"
+            )
+
+            mask = (
+                (df_log["status"] == status_log) &
+                (df_log["keterangan"] == keterangan) &
+                (df_log["timestamp_log"] >= five_min_ago)
+            )
+
+            duplicate = mask.any()
+
+    # ==============================
+    # INSERT JIKA TIDAK DUPLICATE
+    # ==============================
+
+    if not duplicate:
+        supabase.table("log_lensa").insert({
+            "timestamp_log": timestamp.strftime("%Y-%m-%d %H:%M:%S"),
+            "tipe": tipe,
+            "merk": merk,
+            "jenis": jenis,
+            "sph": str(sph),
+            "cyl": str(cyl),
+            "add_power": str(add_power),
+            "status": status_log,
+            "keterangan": keterangan,
+            "user_name": user
+        }).execute()

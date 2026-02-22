@@ -114,7 +114,7 @@ def run():
     # =========================
     # TRANSAKSI TERBARU
     # =========================
-    st.subheader("🕒 Transaksi Terbaru")
+    st.subheader("🕒 Transaksi Terbaru", divider="rainbow")
 
     df_latest = df.sort_values("tanggal_bayar", ascending=False).head(5)
     df_latest_display = df_latest[[
