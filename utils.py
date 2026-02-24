@@ -1,6 +1,7 @@
 import gspread
 import pandas as pd
-from datetime import datetime, timedelta
+import numpy as np
+from datetime import date, datetime, timedelta
 from google.oauth2.service_account import Credentials
 from constants import SHEET_NAMES
 import streamlit as st
@@ -83,7 +84,25 @@ def append_row(sheet_key, sheet_name, data_row):
 # Tambahkan satu baris ke tabel supabase  
 def insert_row_supabase(table_name, data_dict):
     supabase = get_supabase()
-    supabase.table(table_name).insert(data_dict).execute()
+    clean_data = {}
+    for key, value in data_dict.items():
+        # ✅ Convert date & datetime
+        if isinstance(value, (date, datetime)):
+            clean_data[key] = value.isoformat()
+        # ✅ Convert pandas timestamp
+        elif isinstance(value, (pd.Timestamp, np.datetime64)):
+            clean_data[key] = str(value)
+        # ✅ Convert numpy numbers
+        elif isinstance(value, (np.integer, np.int64)):
+            clean_data[key] = int(value)
+        elif isinstance(value, (np.floating,)):
+            clean_data[key] = float(value)
+        elif value == "":
+            clean_data[key] = None
+        else:
+            clean_data[key] = value
+    response = supabase.table(table_name).insert(clean_data).execute()
+    return response
 
 # Tambahkan beberapa baris ke sheet
 def append_rows(sheet_key, sheet_name, data_rows):
@@ -97,46 +116,98 @@ def sort_sheet(sheet, col=1, last_col='F'):
     total_rows = len(values)
     sheet.sort((col, 'asc'), range=f"A2:{last_col}{total_rows}")
 
-# Buat atau cek id pelanggan
-def get_or_create_pelanggan_id(sheet_key, sheet_name, nama, no_hp):
-    df = get_dataframe(sheet_key, sheet_name)
-    df.columns = df.columns.str.strip().str.lower().str.replace(" ", "_")
+def get_or_create_pelanggan_id_supabase(nama, no_hp):
+    supabase = get_supabase()
 
-    # Cek apakah sudah ada
-    existing = df[(df['nama'] == nama) & (df['no_hp'] == no_hp)]
-    if not existing.empty:
-        return existing.iloc[0]['id_pelanggan']
+    # ==============================
+    # Normalisasi input
+    # ==============================
+    nama_clean = str(nama).strip().lower()
+    no_hp_clean = str(no_hp).strip()
 
-    # Generate ID baru
-    id_baru = f"OM{len(df)+1:03}"
-    new_row = [id_baru, nama, no_hp]
-    append_row(sheet_key, sheet_name, new_row)
-    return id_baru
+    if not nama_clean:
+        raise ValueError("Nama tidak boleh kosong")
 
+    if not no_hp_clean:
+        raise ValueError("No HP tidak boleh kosong")
 
+    # ==============================
+    # 1️⃣ Cek EXACT MATCH nama + no_hp
+    # ==============================
+    existing = supabase.table("pelanggan") \
+        .select("id_pelanggan") \
+        .eq("nama", nama_clean) \
+        .eq("no_hp", no_hp_clean) \
+        .execute()
+
+    if existing.data:
+        return existing.data[0]["id_pelanggan"]
+
+    # ==============================
+    # 2️⃣ Generate ID baru
+    # ==============================
+    response_all = supabase.table("pelanggan") \
+        .select("id_pelanggan") \
+        .execute()
+
+    existing_ids = [
+        row["id_pelanggan"]
+        for row in response_all.data
+        if row.get("id_pelanggan", "").startswith("OM")
+    ]
+
+    nomor_list = []
+    for pid in existing_ids:
+        try:
+            nomor = int(pid.replace("OM", ""))
+            nomor_list.append(nomor)
+        except:
+            continue
+
+    urutan = max(nomor_list) + 1 if nomor_list else 1
+    id_baru = f"OM{urutan:03d}"
+
+    # ==============================
+    # 3️⃣ Insert pelanggan baru
+    # ==============================
+    insert_result = supabase.table("pelanggan").insert({
+        "id_pelanggan": id_baru,
+        "nama": nama_clean,
+        "no_hp": no_hp_clean
+    }).execute()
+
+    if insert_result.data:
+        return id_baru
+    else:
+        raise Exception("Gagal insert pelanggan ke Supabase")
+    
 # Buat id transaksi
-def generate_id_transaksi(sheet_key, sheet_name, tanggal_transaksi):
-    df = get_dataframe(sheet_key, sheet_name)
-    df.columns = df.columns.str.strip()
+def generate_id_transaksi_supabase(tanggal_transaksi):
+    supabase = get_supabase()
 
-    urutan = 1
-    if not df.empty and 'ID Transaksi' in df.columns:
-        existing_ids = df['ID Transaksi'].dropna().tolist()
-        nomor_list = []
-        for tid in existing_ids:
-            try:
-                nomor = int(tid.split("/")[2])
-                nomor_list.append(nomor)
-            except:
-                continue
-        if nomor_list:
-            urutan = max(nomor_list) + 1
+    # Ambil semua id_transaksi
+    response = supabase.table("transaksi") \
+        .select("id_transaksi") \
+        .execute()
 
-    # Format: DD-MM/YYYY
+    existing_ids = [row["id_transaksi"] for row in response.data if row.get("id_transaksi")]
+
+    nomor_list = []
+
+    for tid in existing_ids:
+        try:
+            # Format: OM/T/001/10-05/2025
+            nomor = int(tid.split("/")[2])
+            nomor_list.append(nomor)
+        except:
+            continue
+
+    urutan = max(nomor_list) + 1 if nomor_list else 1
+
     hari_bulan = tanggal_transaksi.strftime("%d-%m")
     tahun = tanggal_transaksi.strftime("%Y")
-    id_transaksi = f"OM/T/{urutan:03d}/{hari_bulan}/{tahun}"
-    return id_transaksi
+
+    return f"OM/T/{urutan:03d}/{hari_bulan}/{tahun}"
 
 # Buat id transaksi pesanan luar kota
 def generate_id_skw(sheet_key, sheet_name, nama, tanggal_ambil):
@@ -159,32 +230,33 @@ def generate_id_skw(sheet_key, sheet_name, nama, tanggal_ambil):
 
     return f"OMSKW/{kode}/{next_num:03}/{tanggal_str}"
 
-
-
 # Buat id pembayaran
-def generate_id_pembayaran(sheet_key, sheet_name, tanggal_pembayaran):
-    df = get_dataframe(sheet_key, sheet_name)
-    df.columns = df.columns.str.strip()
+def generate_id_pembayaran_supabase(tanggal_pembayaran):
+    supabase = get_supabase()
 
-    urutan = 1
-    if 'ID Pembayaran' in df.columns:
-        existing_ids = df['ID Pembayaran'].dropna().tolist()
-        nomor_list = []
-        for pid in existing_ids:
-            try:
-               if pid.startswith("OM/P/"):
-                   n = int(pid.split("/")[2])
-                   nomor_list.append(n)
-            except:
-                continue
-        if nomor_list:
-            urutan = max(nomor_list) + 1
+    response = supabase.table("pembayaran") \
+        .select("id_pembayaran") \
+        .execute()
 
-    # Format: DD-MM/YYYY
-    hari_bulanp = tanggal_pembayaran.strftime("%d-%m")
-    tahunp = tanggal_pembayaran.strftime("%Y")
-    id_pembayaran = f"OM/P/{urutan:03d}/{hari_bulanp}/{tahunp}"
-    return id_pembayaran
+    existing_ids = [row["id_pembayaran"] for row in response.data if row.get("id_pembayaran")]
+
+    nomor_list = []
+
+    for pid in existing_ids:
+        try:
+            # Format: OM/P/001/10-05/2025
+            if pid.startswith("OM/P/"):
+                nomor = int(pid.split("/")[2])
+                nomor_list.append(nomor)
+        except:
+            continue
+
+    urutan = max(nomor_list) + 1 if nomor_list else 1
+
+    hari_bulan = tanggal_pembayaran.strftime("%d-%m")
+    tahun = tanggal_pembayaran.strftime("%Y")
+
+    return f"OM/P/{urutan:03d}/{hari_bulan}/{tahun}"
 
 # Buat id pembayaran pesanan luar kota
 def generate_id_pemb_skw(sheet_key, sheet_name, nama, tanggal_ambil):
@@ -219,7 +291,7 @@ def cari_harga_lensa_stock(df_stock, tipe, jenis, merk, sph, cyl, add, pakai_res
             (df_stock['merk'].str.lower() == merk.lower()) &
             (df_stock['sph'].str.lower() == sph.lower()) &
             (df_stock['cyl'].str.lower() == cyl.lower()) & 
-            (df_stock['add'].str.lower() == add.lower())
+            (df_stock['add_power'].str.lower() == add.lower())
         ][kolom_harga]\
         .astype(str)\
         .str.replace("rp", "", case=False)\
@@ -279,8 +351,8 @@ def cari_harga_lensa_luar(df, tipe, jenis, nama_lensa, sph, cyl, add, pakai_rese
             if not (cyl_min <= cyl <= cyl_max):
                 continue
 
-        add_min = pd.to_numeric(row.get('add_min'), errors='coerce')
-        add_max = pd.to_numeric(row.get('add_max'), errors='coerce')
+        add_min = pd.to_numeric(row.get('add_min_power'), errors='coerce')
+        add_max = pd.to_numeric(row.get('add_max_power'), errors='coerce')
         if add is not None and pd.notna(add_min) and pd.notna(add_max):
             if not (add_min <= add <= add_max):
                 continue
@@ -429,31 +501,10 @@ def catat_logframe_supabase(
     duplicate = False
 
     if not df_log.empty:
-
-        # Untuk transaksi kasir → cek id_transaksi
         if source == "kasir" and id_transaksi:
             duplicate = df_log["keterangan"].str.contains(
                 id_transaksi, na=False
             ).any()
-
-        # Untuk iframe → cek dalam 5 menit terakhir
-        elif source == "iframe":
-            five_min_ago = timestamp - timedelta(minutes=5)
-
-        df_log["timestamp_log"] = pd.to_datetime(
-            df_log["timestamp_log"],
-            errors="coerce"
-        )
-
-        df_log = df_log.dropna(subset=["timestamp_log"])
-
-        mask = (
-            (df_log["status"] == status_log) &
-            (df_log["keterangan"] == keterangan) &
-            (df_log["timestamp_log"] >= five_min_ago)
-        )
-
-        duplicate = mask.any()
 
     # ==============================
     # INSERT JIKA TIDAK DUPLICATE
