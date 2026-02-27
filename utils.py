@@ -11,7 +11,7 @@ from supabase import create_client
 @st.cache_resource
 def get_supabase():
     url = st.secrets["supabase"]["url"]
-    key = st.secrets["supabase"]["anon_key"]
+    key = st.secrets["supabase"]["service_role_key"]
     return create_client(url, key)
 
 # Font
@@ -305,68 +305,91 @@ def cari_harga_lensa_stock(df_stock, tipe, jenis, merk, sph, cyl, add, pakai_res
         return None
 
 # Cari Harga Lensa Luar Stock
-def cari_harga_lensa_luar(df, tipe, jenis, nama_lensa, sph, cyl, add, pakai_reseller=True):
-    df.columns = df.columns.str.strip().str.lower().str.replace(" ", "_")
-    tipe = (tipe or "").strip().lower()
-    jenis = (jenis or "").strip().lower()
-    nama_lensa = (nama_lensa or "").strip().lower()
-    kolom_harga = 'harga_reseller' if pakai_reseller else 'harga_jual'
+def cari_harga_lensa_luar(
+    df, tipe, jenis, nama_lensa,
+    sph, cyl, add,
+    pakai_reseller=True
+):
+    df = df.copy()
+    df.columns = df.columns.str.lower().str.strip()
+
+    kolom_harga = "harga_reseller" if pakai_reseller else "harga_jual"
 
     try:
         sph = float(str(sph).replace(",", "."))
         cyl = float(str(cyl).replace(",", "."))
         add = float(str(add).replace(",", ".")) if add not in ["", None] else None
-
-    except ValueError:
+    except:
         return None
-    
+
     df_filtered = df[
-        (df['tipe'].str.lower() == tipe) &
-        (df['jenis'].str.lower() == jenis) &
-        (df['nama_lensa'].str.lower() == nama_lensa)
+        (df["tipe"].str.lower() == str(tipe).lower()) &
+        (df["jenis"].str.lower() == str(jenis).lower()) &
+        (df["nama_lensa"].str.lower() == str(nama_lensa).lower())
     ].copy()
 
-    # Tambahkan kolom prioritas: 2 = CYL & ADD cocok, 1 = CYL cocok, 0 = umum
-    def calculate_priority(row):
-        has_cyl = pd.notna(pd.to_numeric(row.get("cyl_min"), errors="coerce")) and pd.notna(pd.to_numeric(row.get("cyl_max"), errors="coerce"))
-        has_add = pd.notna(pd.to_numeric(row.get("add_min"), errors="coerce")) and pd.notna(pd.to_numeric(row.get("add_max"), errors="coerce"))
-        return int(has_cyl) + int(has_add)
+    if df_filtered.empty:
+        return None
 
-    df_filtered["prioritas"] = df_filtered.apply(calculate_priority, axis=1)
+    # Convert range ke numeric
+    range_cols = [
+        "sph_min", "sph_max",
+        "cyl_min", "cyl_max",
+        "add_min_power", "add_max_power"
+    ]
+
+    for col in range_cols:
+        if col in df_filtered.columns:
+            df_filtered[col] = pd.to_numeric(
+                df_filtered[col], errors="coerce"
+            )
+
+    # =========================================
+    # Tambahkan PRIORITAS
+    # =========================================
+    def hitung_prioritas(row):
+        prioritas = 0
+
+        # Punya CYL range
+        if pd.notna(row.get("cyl_min")) and pd.notna(row.get("cyl_max")):
+            prioritas += 2
+
+        # Punya ADD range
+        if pd.notna(row.get("add_min_power")) and pd.notna(row.get("add_max_power")):
+            prioritas += 1
+
+        return prioritas
+
+    df_filtered["prioritas"] = df_filtered.apply(hitung_prioritas, axis=1)
+
+    # Sort prioritas tertinggi dulu
     df_filtered = df_filtered.sort_values("prioritas", ascending=False)
 
+    # =========================================
+    # Loop cek range
+    # =========================================
     for _, row in df_filtered.iterrows():
-        try:
-            sph_min = float(row['sph_min'])
-            sph_max = float(row['sph_max'])
-        except (ValueError, TypeError):
+
+        # SPH wajib cocok
+        if not (row["sph_min"] <= sph <= row["sph_max"]):
             continue
 
-        if not (sph_min <= sph <= sph_max):
-            continue
-
-        cyl_min = pd.to_numeric(row.get('cyl_min'), errors='coerce')
-        cyl_max = pd.to_numeric(row.get('cyl_max'), errors='coerce')
-        if pd.notna(cyl_min) and pd.notna(cyl_max):
-            if not (cyl_min <= cyl <= cyl_max):
+        # CYL kalau row punya range
+        if pd.notna(row.get("cyl_min")) and pd.notna(row.get("cyl_max")):
+            if not (row["cyl_min"] <= cyl <= row["cyl_max"]):
                 continue
 
-        add_min = pd.to_numeric(row.get('add_min_power'), errors='coerce')
-        add_max = pd.to_numeric(row.get('add_max_power'), errors='coerce')
-        if add is not None and pd.notna(add_min) and pd.notna(add_max):
-            if not (add_min <= add <= add_max):
+        # ADD kalau ada
+        if add is not None and \
+           pd.notna(row.get("add_min_power")) and \
+           pd.notna(row.get("add_max_power")):
+
+            if not (row["add_min_power"] <= add <= row["add_max_power"]):
                 continue
 
-        kolom_harga = 'harga_reseller' if pakai_reseller else 'harga_jual'
-        harga_str = str(row.get(kolom_harga, "")).replace("Rp", "").replace(".", "").replace(",", "").strip()
-
-        try:
-            return int(harga_str)
-        except ValueError:
-            continue
+        return int(row[kolom_harga])
 
     return None
-
 
 # Buat status log untuk frame
 def buat_logframe_status(source: str, mode=None, status_frame=None, merk=None, kode=None, jumlah_input=None, stock_lama=None, stock_baru=None, id_transaksi=None, nama=None):
