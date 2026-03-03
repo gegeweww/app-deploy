@@ -230,6 +230,39 @@ def generate_id_skw(sheet_key, sheet_name, nama, tanggal_ambil):
 
     return f"OMSKW/{kode}/{next_num:03}/{tanggal_str}"
 
+# Versi supabase
+def generate_id_skw_supabase(nama, tanggal_ambil):
+
+    supabase = get_supabase()
+
+    kode = "01" if nama == "Nelly" else "02"
+    tanggal_str = pd.to_datetime(tanggal_ambil).strftime("%d-%m-%Y")
+
+    # Ambil semua id_transaksi yang valid
+    response = supabase.table("pesanan_luar_kota") \
+        .select("id_transaksi") \
+        .execute()
+
+    data = response.data
+
+    if not data:
+        next_num = 1
+    else:
+        df = pd.DataFrame(data)
+
+        df = df[df["id_transaksi"].str.contains(r"OMSKW/\d+/\d+/")]
+
+        if df.empty:
+            next_num = 1
+        else:
+            df["urutan"] = df["id_transaksi"] \
+                .str.extract(r"OMSKW/\d+/(\d+)/")[0] \
+                .astype(int)
+
+            next_num = df["urutan"].max() + 1
+
+    return f"OMSKW/{kode}/{next_num:03}/{tanggal_str}"
+
 # Buat id pembayaran
 def generate_id_pembayaran_supabase(tanggal_pembayaran):
     supabase = get_supabase()
@@ -276,6 +309,38 @@ def generate_id_pemb_skw(sheet_key, sheet_name, nama, tanggal_ambil):
         else:
             df['urutan'] = df['id_pembayaran'].str.extract(r"OMSKW/P/\d+/(\d+)/")[0].astype(int)
             next_num = df['urutan'].max() + 1
+
+    return f"OMSKW/P/{kode}/{next_num:03}/{tanggal_str}"
+
+# Versi Supabase
+def generate_id_pemb_skw_supabase(nama, tanggal_ambil):
+
+    supabase = get_supabase()
+
+    kode = "01" if nama == "Nelly" else "02"
+    tanggal_str = pd.to_datetime(tanggal_ambil).strftime("%d-%m-%Y")
+
+    response = supabase.table("pembayaran_luar_kota") \
+        .select("id_pembayaran") \
+        .execute()
+
+    data = response.data
+
+    if not data:
+        next_num = 1
+    else:
+        df = pd.DataFrame(data)
+
+        df = df[df["id_pembayaran"].str.contains(r"OMSKW/P/\d+/\d+/")]
+
+        if df.empty:
+            next_num = 1
+        else:
+            df["urutan"] = df["id_pembayaran"] \
+                .str.extract(r"OMSKW/P/\d+/(\d+)/")[0] \
+                .astype(int)
+
+            next_num = df["urutan"].max() + 1
 
     return f"OMSKW/P/{kode}/{next_num:03}/{tanggal_str}"
 
