@@ -121,15 +121,19 @@ def run():
         "tanggal_bayar",
         "id_transaksi",
         "nama",
-        "nominal_pembayaran",
+        "total_harga",
+        "status",
         "user_name"
     ]]
     
-    df_latest_display["nominal_pembayaran"] = df_latest_display["nominal_pembayaran"] \
+    df_latest_display["total_harga"] = df_latest_display["total_harga"] \
         .apply(lambda x: f"Rp {x:,.0f}".replace(",", "."))
         
     df_latest_display.columns = [
         col.replace('_', ' ').title()
         for col in df_latest_display.columns
     ]
+    df_latest_display = df_latest_display.reset_index(drop=True)
+    df_latest_display.index = df_latest_display.index + 1
+    df_latest_display.index.name = "No"
     st.dataframe(df_latest_display, use_container_width=True)

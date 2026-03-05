@@ -1,9 +1,6 @@
-import gspread
 import pandas as pd
 import numpy as np
 from datetime import date, datetime, timedelta
-from google.oauth2.service_account import Credentials
-from constants import SHEET_NAMES
 import streamlit as st
 from zoneinfo import ZoneInfo
 from supabase import create_client
@@ -26,40 +23,6 @@ def set_font():
         </style>
     """, unsafe_allow_html=True)
 
-# Autentikasi dan akses Google Sheet
-def authorize_gspread():
-    credentials = Credentials.from_service_account_info(
-        st.secrets["gcp_service_account"], # type: ignore
-        scopes=["https://www.googleapis.com/auth/spreadsheets"]
-    )
-    client = gspread.authorize(credentials)
-    return client
-def get_sheet(sheet_key: str, sheet_name: str):
-    client = authorize_gspread()
-    sheet = client.open_by_key(sheet_key).worksheet(sheet_name)
-    return sheet
-
-# Baca isi sheet ke DataFrame dan bersihkan
-def get_dataframe(sheet_key: str, sheet_name: str):
-    sheet = get_sheet(sheet_key, sheet_name)
-    values = sheet.get_all_values()
-
-    if not values or not values[0]:
-        raise ValueError(f"Sheet '{sheet_name}' kosong atau tidak memiliki header.")
-
-    headers = values[0]
-    data = values[1:]
-
-    df = pd.DataFrame(data, columns=headers)
-
-    for col in df.columns:
-        try:
-            df[col] = df[col].astype(str).str.strip()
-        except:
-            df[col] = df[col].astype(str)
-
-    return df
-
 # Baca isi database
 def get_dataframe_supabase(table_name):
     supabase = get_supabase()
@@ -74,12 +37,6 @@ def get_table_raw(table_name):
 @st.cache_data(ttl=60)
 def get_table_cached(table_name):
     return get_table_raw(table_name)
-
-# Tambahkan satu baris ke sheet
-def append_row(sheet_key, sheet_name, data_row):
-    client = authorize_gspread()
-    sheet = client.open_by_key(sheet_key).worksheet(sheet_name)
-    sheet.append_row(data_row)
   
 # Tambahkan satu baris ke tabel supabase  
 def insert_row_supabase(table_name, data_dict):
@@ -103,18 +60,6 @@ def insert_row_supabase(table_name, data_dict):
             clean_data[key] = value
     response = supabase.table(table_name).insert(clean_data).execute()
     return response
-
-# Tambahkan beberapa baris ke sheet
-def append_rows(sheet_key, sheet_name, data_rows):
-    client = authorize_gspread()
-    sheet = client.open_by_key(sheet_key).worksheet(sheet_name)
-    sheet.append_rows(data_rows, value_input_option="USER_ENTERED")
-
-# Sort Data Frame (A-Z)
-def sort_sheet(sheet, col=1, last_col='F'):
-    values = sheet.get_all_values()
-    total_rows = len(values)
-    sheet.sort((col, 'asc'), range=f"A2:{last_col}{total_rows}")
 
 def get_or_create_pelanggan_id_supabase(nama, no_hp):
     supabase = get_supabase()
@@ -210,27 +155,6 @@ def generate_id_transaksi_supabase(tanggal_transaksi):
     return f"OM/T/{urutan:03d}/{hari_bulan}/{tahun}"
 
 # Buat id transaksi pesanan luar kota
-def generate_id_skw(sheet_key, sheet_name, nama, tanggal_ambil):
-    df = get_dataframe(sheet_key, sheet_name)
-    df.columns = df.columns.str.strip().str.lower().str.replace(" ", "_")
-
-    kode = "01" if nama == "Nelly" else "02"
-    tanggal_str = pd.to_datetime(tanggal_ambil).strftime("%d-%m-%Y")
-
-    # Ambil semua id_transaksi yang valid (tidak perlu filter tanggal)
-    if 'id_transaksi' not in df.columns:
-        next_num = 1
-    else:
-        df = df[df['id_transaksi'].str.contains(r"OMSKW/\d+/\d+/")]
-        if df.empty:
-            next_num = 1
-        else:
-            df['urutan'] = df['id_transaksi'].str.extract(r"OMSKW/\d+/(\d+)/")[0].astype(int)
-            next_num = df['urutan'].max() + 1
-
-    return f"OMSKW/{kode}/{next_num:03}/{tanggal_str}"
-
-# Versi supabase
 def generate_id_skw_supabase(nama, tanggal_ambil):
 
     supabase = get_supabase()
@@ -292,27 +216,6 @@ def generate_id_pembayaran_supabase(tanggal_pembayaran):
     return f"OM/P/{urutan:03d}/{hari_bulan}/{tahun}"
 
 # Buat id pembayaran pesanan luar kota
-def generate_id_pemb_skw(sheet_key, sheet_name, nama, tanggal_ambil):
-    df = get_dataframe(sheet_key, sheet_name)
-    df.columns = df.columns.str.strip().str.lower().str.replace(" ", "_")
-
-    kode = "01" if nama == "Nelly" else "02"
-    tanggal_str = pd.to_datetime(tanggal_ambil).strftime("%d-%m-%Y")
-
-    # Ambil semua id_pembayaran yang valid (tidak perlu filter tanggal)
-    if 'id_pembayaran' not in df.columns:
-        next_num = 1
-    else:
-        df = df[df['id_pembayaran'].str.contains(r"OMSKW/P/\d+/\d+/")]
-        if df.empty:
-            next_num = 1
-        else:
-            df['urutan'] = df['id_pembayaran'].str.extract(r"OMSKW/P/\d+/(\d+)/")[0].astype(int)
-            next_num = df['urutan'].max() + 1
-
-    return f"OMSKW/P/{kode}/{next_num:03}/{tanggal_str}"
-
-# Versi Supabase
 def generate_id_pemb_skw_supabase(nama, tanggal_ambil):
 
     supabase = get_supabase()
@@ -482,60 +385,8 @@ def buat_loglensa_status(source: str, mode=None, status_lensa=None, jenis=None, 
     elif source == 'luarkota':
         if status_lensa == 'Stock':
             return 'terjual', f'terjual dalam transaksi: {id_transaksi}, Nama: {nama}'
-        
-def catat_logframe(sheet_key, sheet_name, merk, kode, source, mode=None, status_frame=None, jumlah_input=None, stock_lama=None, stock_baru=None, id_transaksi=None, nama=None, user="Unknown"):
-    status_log, keterangan = buat_logframe_status(
-        source=source,
-        mode=mode,
-        status_frame=status_frame,
-        merk=merk,
-        kode=kode,
-        jumlah_input=jumlah_input,
-        stock_lama=stock_lama,
-        stock_baru=stock_baru,
-        id_transaksi=id_transaksi,
-        nama=nama
-    )
-    
-    if status_log and keterangan:
-        timestamp = datetime.now(ZoneInfo("Asia/Jakarta"))
-        timestamp_str = timestamp.strftime("%d-%m-%Y %H:%M:%S")
-        
-        # Check if the same log entry already exists
-        try:
-            df_log = get_dataframe(sheet_key, sheet_name)
-            
-            # For sales transactions, check for the same transaction ID
-            if source == 'kasir' and id_transaksi:
-                mask = (
-                    (df_log['Keterangan'].str.contains(id_transaksi, na=False)) &
-                    (df_log['Merk'] == merk) &
-                    (df_log['Kode'] == kode)
-                )
-            # For stock updates, check for similar entries in the last 5 minutes
-            elif source == 'iframe':
-                five_min_ago = (timestamp - timedelta(minutes=5)).strftime("%d-%m-%Y %H:%M:%S")
-                mask = (
-                    (df_log['Merk'] == merk) & 
-                    (df_log['Kode'] == kode) & 
-                    (df_log['Status'] == status_log) &
-                    (df_log['Keterangan'] == keterangan) &
-                    (df_log['Timestamp'] >= five_min_ago)
-                )
-            else:
-                mask = pd.Series(False)  # No match if not kasir or iframe
-            
-            # If no duplicate found, add the new log entry
-            if not mask.any():
-                row = [timestamp_str, merk, kode, status_log, keterangan, user]
-                append_row(sheet_key, sheet_name, row)
-                
-        except Exception as e:
-            # If there's any error (e.g., sheet empty), just add the log entry
-            row = [timestamp_str, merk, kode, status_log, keterangan, user]
-            append_row(sheet_key, sheet_name, row)
 
-# Versi supabase
+# Catat Log Frame
 def catat_logframe_supabase(
     merk,
     kode,
@@ -549,9 +400,6 @@ def catat_logframe_supabase(
     nama=None,
     user="Unknown"
 ):
-    """
-    Versi Supabase dari catat_logframe (mengikuti logika lama)
-    """
 
     status_log, keterangan = buat_logframe_status(
         source=source,
@@ -607,73 +455,8 @@ def catat_logframe_supabase(
             "keterangan": keterangan,
             "user_name": user
         }).execute()
-
-def catat_loglensa(sheet_key, sheet_name, jenis, tipe, merk, sph, cyl, add, source, mode=None, status_lensa=None, jumlah_input=None, stock_lama=None, stock_baru=None, id_transaksi=None, nama=None, user="Unknown"):
-    from datetime import datetime, timedelta
-
-    status_log, keterangan = buat_loglensa_status(
-        source=source,
-        status_lensa=status_lensa,
-        jenis=jenis,
-        tipe=tipe,
-        merk=merk,
-        sph=sph,
-        cyl=cyl,
-        add=add,
-        jumlah_input=jumlah_input,
-        stock_lama=stock_lama,
-        stock_baru=stock_baru,
-        id_transaksi=id_transaksi,
-        nama=nama
-    )
-    
-    if status_log and keterangan:
-        timestamp = datetime.now(ZoneInfo("Asia/Jakarta"))
-        timestamp_str = timestamp.strftime("%d-%m-%Y %H:%M:%S")
-        
-        # Check if the same log entry already exists
-        try:
-            df_log = get_dataframe(sheet_key, sheet_name)
             
-            # For sales transactions, check for the same transaction ID
-            if source in ['kasir', 'luarkota'] and id_transaksi:
-                mask = (
-                    (df_log['Keterangan'].str.contains(id_transaksi, na=False)) &
-                    (df_log['Merk'] == merk) &
-                    (df_log['Jenis'] == jenis) &
-                    (df_log['Tipe'] == tipe) &
-                    (df_log['SPH'] == str(sph)) &
-                    (df_log['CYL'] == str(cyl)) &
-                    (df_log['Add'] == str(add))
-                )
-            # For stock updates, check for similar entries in the last 5 minutes
-            elif source == 'ilensa':
-                five_min_ago = (timestamp - timedelta(minutes=5)).strftime("%d-%m-%Y %H:%M:%S")
-                mask = (
-                    (df_log['Merk'] == merk) & 
-                    (df_log['Jenis'] == jenis) & 
-                    (df_log['Tipe'] == tipe) & 
-                    (df_log['SPH'] == str(sph)) & 
-                    (df_log['CYL'] == str(cyl)) & 
-                    (df_log['Add'] == str(add)) &
-                    (df_log['Status'] == status_log) &
-                    (df_log['Keterangan'] == keterangan) &
-                    (df_log['Timestamp'] >= five_min_ago)
-                )
-            else:
-                mask = pd.Series(False)  # No match if source not recognized
-            
-            # If no duplicate found, add the new log entry
-            if not mask.any():
-                row = [timestamp_str, tipe, merk, jenis, sph, cyl, add, status_log, keterangan, user]
-                append_row(sheet_key, sheet_name, row)
-                
-        except Exception as e:
-            # If there's any error (e.g., sheet empty), just add the log entry
-            row = [timestamp_str, tipe, merk, jenis, sph, cyl, add, status_log, keterangan, user]
-            append_row(sheet_key, sheet_name, row)
-            
-# Versi loglensa Supabase
+# Catat Log Lensa
 def buat_loglensa_status(
     source: str,
     mode=None,

@@ -8,7 +8,20 @@ from utils import (
     get_or_create_pelanggan_id_supabase, cari_harga_lensa_luar, cari_harga_lensa_stock, 
     catat_logframe_supabase, catat_loglensa_supabase
     )
-from constants import SHEET_KEY, SHEET_NAMES
+
+@st.dialog("✅ Pembayaran Berhasil")
+def dialog_ringkasan_kasir(data, reset_func):
+    st.markdown(f"""
+    **Tanggal Transaksi:** {data['tanggal']}  
+    **ID Transaksi:** `{data['id_transaksi']}`  
+    **Nama:** {data['nama']}  
+    **Status:** {data['status']}  
+    **Sisa:** Rp {data['sisa']:,.0f}
+    """)
+    if st.button("OK"):
+        reset_func()
+        st.rerun()
+        
 def run():
     @st.cache_data(ttl=60)
     def load_data():
@@ -330,14 +343,16 @@ def run():
         st.markdown(f"##### Pembulatan: Rp {pembulatan:,.0f}")
         st.markdown(f"#### 💰 Total Harga: Rp {harga_final:,.0f}")
 
-        metode = st.selectbox("Jenis Pembayaran", ["Angsuran", "Full"])
         via = st.selectbox("Via Pembayaran", ["Cash", "Qris EDC Mandiri", "Qris EDC BCA", "Qris Statis Mandiri", "TF BCA", "TF Mandiri"])
         nominal = st.number_input("Masukkan Nominal", min_value=0, step=1000)
-        sisa = nominal - harga_final
-        status = "Lunas" if sisa >= 0 else "Belum Lunas"
-
-        if sisa > 0:
-            st.success(f"Kembalian: Rp {sisa:,.0f}")
+        sisa = harga_final - nominal
+        if sisa <= 0:
+            status = "Lunas"
+            sisa = 0
+        else:
+            status = "Belum Lunas"
+            
+        metode = "Full" if status == "Lunas" else "Angsuran"
 
         if st.button("💾 Simpan Pembayaran"):
             st.session_state['id_pelanggan'] = get_or_create_pelanggan_id_supabase(nama, kontak)
@@ -440,7 +455,7 @@ def run():
                         user=user
                     )
                                         
-            # Update stok lensa kanan
+            # Update stok lensa
             if item['status_lensa'] == "Stock":
 
                 for side in ["r", "l"]:
@@ -547,15 +562,4 @@ def run():
         st.session_state.pop("no_hp", None)
 
     if 'ringkasan_tersimpan' in st.session_state:
-        data = st.session_state['ringkasan_tersimpan']
-        with st.expander("✅ Pembayaran Berhasil", expanded=True):
-            st.markdown(f"""
-            **Tanggal Transaksi:** {data['tanggal']}  
-            **ID Transaksi:** `{data['id_transaksi']}`  
-            **Nama:** {data['nama']}  
-            **Status:** {data['status']}  
-            **Sisa/Kembalian:** Rp {data['sisa']:,.0f}
-            """)
-            if st.button("OK"):
-                reset_form_kasir()
-                st.rerun()
+        dialog_ringkasan_kasir(st.session_state['ringkasan_tersimpan'], reset_form_kasir)

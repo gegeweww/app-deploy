@@ -11,6 +11,19 @@ from utils import (
 
 ONGKIR = 25000
 
+@st.dialog("✅ Pembayaran Berhasil")
+def dialog_ringkasan_luarkota(data, reset_func):
+    st.markdown(f"""
+    **Tanggal Transaksi:** {data['tanggal']}  
+    **ID Transaksi:** `{data['id_transaksi']}`  
+    **Nama:** {data['nama']}  
+    **Status:** {data['status']}  
+    **Sisa/Kembalian:** Rp {data['sisa']:,.0f}
+    """)
+    if st.button("OK"):
+        reset_func()
+        st.rerun()
+
 def now_jkt():
     return datetime.now(ZoneInfo("Asia/Jakarta")).replace(microsecond=0)
 
@@ -138,8 +151,10 @@ def run():
     potong = st.selectbox("Ongkos Potong", [17000, 27000, 32000])
     keterangan = st.text_area("Keterangan Tambahan")
 
-    # Subtotal per item (tanpa ongkir, ongkir di header)
-    subtotal = harga_lensa + potong + tambahan
+    # Ongkir hanya untuk status lensa "Pesan"
+    ongkir_item = ONGKIR if status_lensa == "Pesan" else 0
+    subtotal = harga_lensa + potong + tambahan + ongkir_item
+
 
     if st.button("📝 Tambah ke Daftar"):
         # ===================== CEK STOK =====================
@@ -189,9 +204,10 @@ def run():
             "sph_l": sph_l, "cyl_l": cyl_l, "axis_l": axis_l, "add_l": add_l,
             "harga_lensa": harga_lensa,
             "potong": potong,
+            "ongkir": ongkir_item,
             "tambahan": tambahan,
-            "diskon": diskon,
             "subtotal": subtotal,
+            "diskon": diskon,
             "keterangan": keterangan,
         })
         st.success("Item berhasil ditambahkan!")
@@ -222,13 +238,14 @@ def run():
             "sph_l": "SPH L", "cyl_l": "CYL L", "axis_l": "Axis L", "add_l": "Add L",
             "harga_lensa": "Harga Lensa",
             "potong": "Ongkos Potong",
+            "ongkir": "Ongkir",
             "tambahan": "Tambahan",
             "subtotal": "Subtotal",
             "diskon": "Diskon",
             "keterangan": "Keterangan"
         })
 
-        kolom_rupiah = ["Harga Lensa", "Ongkos Potong", "Tambahan", "Diskon", "Subtotal"]
+        kolom_rupiah = ["Harga Lensa", "Ongkos Potong", "Ongkir", "Tambahan", "Diskon", "Subtotal"]
         for col in kolom_rupiah:
             if col in df_display.columns:
                 df_display[col] = df_display[col].apply(
@@ -297,6 +314,7 @@ def run():
                 "axis_l": item["axis_l"], "add_l": item["add_l"],
                 "harga_lensa": item["harga_lensa"],
                 "ongkos_potong": item["potong"],
+                "ongkir": item["ongkir"],
                 "tambahan": item["tambahan"],
                 "diskon": item["diskon"],
                 "keterangan": item["keterangan"],
@@ -366,6 +384,7 @@ def run():
             "metode": metode,
             "via": via,
             "total_harga": int(total),
+            "nominal_pembayaran": int(nominal),
             "sisa": int(sisa),
             "pembayaran_ke": 1,
             "status": status,
@@ -388,15 +407,4 @@ def run():
         st.session_state.pop("ringkasan_tersimpan", None)
 
     if 'ringkasan_tersimpan' in st.session_state:
-        data = st.session_state['ringkasan_tersimpan']
-        with st.expander("✅ Pembayaran Berhasil", expanded=True):
-            st.markdown(f"""
-            **Tanggal Transaksi:** {data['tanggal']}  
-            **ID Transaksi:** `{data['id_transaksi']}`  
-            **Nama:** {data['nama']}  
-            **Status:** {data['status']}  
-            **Sisa/Kembalian:** Rp {data['sisa']:,.0f}
-            """)
-            if st.button("OK"):
-                reset_form_luarkota()
-                st.rerun()
+        dialog_ringkasan_luarkota(st.session_state['ringkasan_tersimpan'], reset_form_luarkota)
