@@ -31,8 +31,27 @@ def get_dataframe_supabase(table_name):
 
 def get_table_raw(table_name):
     supabase = get_supabase()
-    response = supabase.table(table_name).select("*").execute()
-    return pd.DataFrame(response.data)
+    all_data = []
+    page = 0
+    page_size = 1000
+
+    while True:
+        response = supabase.table(table_name) \
+            .select("*") \
+            .range(page * page_size, (page + 1) * page_size - 1) \
+            .execute()
+        
+        if not response.data:
+            break
+        
+        all_data.extend(response.data)
+        
+        if len(response.data) < page_size:
+            break
+        
+        page += 1
+
+    return pd.DataFrame(all_data)
 
 @st.cache_data(ttl=60)
 def get_table_cached(table_name):

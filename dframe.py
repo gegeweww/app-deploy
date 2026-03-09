@@ -26,7 +26,7 @@ def run():
         df_display = dataframe.drop(columns=["id", "harga_modal"], errors="ignore")
         df_display = df_display.reset_index(drop=True)
         df_display["harga_jual"] = df_display["harga_jual"] \
-        .apply(lambda x: f"Rp {x:,.0f}".replace(",", "."))
+            .apply(lambda x: f"Rp {x:,.0f}".replace(",", "."))
         df_display.index = df_display.index + 1
         df_display.index.name = "No"
 
@@ -38,13 +38,37 @@ def run():
     # ==============================
     # FILTER SECTION
     # ==============================
+
     col1, col2, col3, col4 = st.columns([3, 3, 1, 1])
 
+    # Options merk dari semua data
+    merk_options = sorted(df["merk"].dropna().unique().tolist())
+
     with col1:
-        merk_input = st.text_input("Merk", placeholder="Contoh: Levi's")
+        merk_input = st.selectbox(
+            "Merk",
+            options=[""] + merk_options,
+            index=0,
+            placeholder="Contoh: Levi's",
+            key="merk_input_frame"
+        )
+
+    # Filter kode berdasarkan merk yang dipilih
+    if merk_input:
+        df_kode_filtered = df[df["merk"] == merk_input]
+    else:
+        df_kode_filtered = df
+
+    kode_options = sorted(df_kode_filtered["kode"].dropna().unique().tolist())
 
     with col2:
-        kode_input = st.text_input("Kode", placeholder="Contoh: LV001")
+        kode_input = st.selectbox(
+            "Kode",
+            options=[""] + kode_options,
+            index=0,
+            placeholder="Contoh: LV001",
+            key="kode_input_frame"
+        )
 
     with col3:
         cari = st.button("Cari")
@@ -59,14 +83,10 @@ def run():
 
     if cari:
         if merk_input:
-            filtered_df = filtered_df[
-                filtered_df["merk"].str.contains(merk_input, case=False, na=False)
-            ]
+            filtered_df = filtered_df[filtered_df["merk"] == merk_input]
 
         if kode_input:
-            filtered_df = filtered_df[
-                filtered_df["kode"].astype(str).str.contains(kode_input, case=False, na=False)
-            ]
+            filtered_df = filtered_df[filtered_df["kode"] == kode_input]
 
         if not filtered_df.empty:
             st.success(f"Ditemukan {len(filtered_df)} data")
