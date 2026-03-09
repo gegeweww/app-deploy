@@ -10,7 +10,7 @@ def load_data():
 
 
 def run():
-    st.title("📦 History Pesanan Luar Kota")
+    st.title("📜 History Pesanan Luar Kota")
 
     if st.button("🔄 Refresh Data"):
         st.cache_data.clear()

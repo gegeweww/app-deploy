@@ -4,7 +4,7 @@ from utils import get_table_cached, get_supabase
 
 
 def run():
-    st.title("Database Pelanggan")
+    st.title("👥 Database Pelanggan")
 
     if st.button("🔄 Refresh Data"):
         st.cache_data.clear()

@@ -15,10 +15,10 @@ def get_supabase():
 def set_font():
     st.markdown("""
         <style>
-        @import url('https://fonts.googleapis.com/css2?family=Roboto&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600&display=swap');
 
         html, body, div, span, input, textarea, select, label, button, p, h1, h2, h3, h4, h5, h6 {
-            font-family: 'Roboto', sans-serif !important;
+            font-family: 'Outfit', sans-serif !important;
         }
         </style>
     """, unsafe_allow_html=True)

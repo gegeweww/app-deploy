@@ -5,7 +5,7 @@ from utils import get_table_cached
 
 def run():
 
-    st.title("Database Lensa")
+    st.title(":goggles: Database Lensa")
 
     # ==============================
     # AMBIL DATA DARI SUPABASE

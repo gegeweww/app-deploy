@@ -19,7 +19,7 @@ import manajemen_stock
 
 def show_menu():
     
-    st.sidebar.title("📦 Navigasi")
+    st.sidebar.title("Optik Maroon")
     st.sidebar.title(f"👋 Hai, {st.session_state['user']}")
     
     # Tombol untuk ganti user
