@@ -15,6 +15,7 @@ import pemb_luarkota
 import logluarkota
 import dashboard
 import pelanggan
+import manajemen_stock
 
 def show_menu():
     
@@ -41,11 +42,12 @@ def show_menu():
         "Log Frame",
         "Log Lensa",
         "Input Stock Frame",
-        "Input Stock Lensa"
+        "Input Stock Lensa",
+        "Manajemen Stock"
     ])
     if menu == "Dashboard":
         dashboard.run()
-    if menu == "Data Pelanggan":
+    elif menu == "Data Pelanggan":
         pelanggan.run()
     elif menu == "Data Frame":
         dframe.run()
@@ -71,3 +73,5 @@ def show_menu():
         logluarkota.run()
     elif menu == "Input Stock Lensa":
         ilensa.run()
+    elif menu == "Manajemen Stock":
+        manajemen_stock.run()
