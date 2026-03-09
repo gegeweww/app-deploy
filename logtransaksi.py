@@ -123,15 +123,13 @@ def run():
     # Display
     # ==============================
     if not df_filtered.empty:
-        df_display = df_filtered.drop(columns=['bulan'], errors='ignore')
-        df_display = df_display.reset_index(drop=True)
         df_display = df_filtered.drop(
             columns=['tahun', 'bulan_num', 'bulan_nama'],
             errors='ignore'
-        )
+        ).reset_index(drop=True)
+
         df_display.index = df_display.index + 1
         df_display.index.name = "No"
-
 
         df_display.columns = [
             col.replace('_', ' ').title()
