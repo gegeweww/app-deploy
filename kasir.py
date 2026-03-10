@@ -330,7 +330,7 @@ def run():
                     lambda x: f"Rp {int(x):,}".replace(",", ".") if pd.notnull(x) else "Rp 0"
                 )
 
-        st.dataframe(df_display, use_container_width=True)
+        st.dataframe(df_display, width='stretch')
 
         # Hitung total dan pembulatan
         total = sum([item['subtotal'] for item in st.session_state.daftar_item])

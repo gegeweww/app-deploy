@@ -101,7 +101,7 @@ def run():
     df_final.index = df_final.index + 1
     df_final.index.name = "No"
 
-    st.dataframe(df_final, use_container_width=True)
+    st.dataframe(df_final, width='stretch')
 
     df_pel = df_pelanggan.copy()
     df_pel.columns = df_pel.columns.str.lower()

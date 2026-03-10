@@ -58,7 +58,7 @@ def run():
             for col in df_harga_display.columns
         ]
 
-        st.dataframe(df_harga_display, use_container_width=True)
+        st.dataframe(df_harga_display, width='stretch')
 
     else:
         st.warning("Data harga lensa kosong.")
@@ -79,7 +79,7 @@ def run():
             for col in df_display.columns
         ]
 
-        st.dataframe(df_display, use_container_width=True)
+        st.dataframe(df_display, width='stretch')
 
     # ==============================
     # STOCK LENSA

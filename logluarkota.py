@@ -152,4 +152,4 @@ def run():
     hasil.index = hasil.index + 1
     hasil.index.name = "No"
 
-    st.dataframe(hasil, use_container_width=True)
+    st.dataframe(hasil, width='stretch')
