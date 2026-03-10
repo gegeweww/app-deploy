@@ -438,7 +438,7 @@ def catat_logframe_supabase(
 
     supabase = get_supabase()
 
-    timestamp = datetime.now()
+    timestamp = datetime.now(ZoneInfo("Asia/Jakarta"))
     timestamp_str = timestamp.strftime("%Y-%m-%d %H:%M:%S")
 
     # ==============================
@@ -540,7 +540,7 @@ def catat_loglensa_supabase(
         return
 
     supabase = get_supabase()
-    timestamp = datetime.now()
+    timestamp = datetime.now(ZoneInfo("Asia/Jakarta"))
     five_min_ago = timestamp - timedelta(minutes=5)
 
     # ==============================
