@@ -1,24 +1,23 @@
 import streamlit as st
 
-# Impor halaman modul
-import dframe
-import dlensa
-import logframe
-import loglensa
-import iframe
-import ilensa
-import kasir
-import pemb_angsuran
-import logtransaksi
-import luarkota
-import pemb_luarkota
-import logluarkota
-import dashboard
-import pelanggan
-import manajemen_stock
-
 def show_menu():
-    
+    # Impor halaman modul
+    import dframe
+    import dlensa
+    import logframe
+    import loglensa
+    import iframe
+    import ilensa
+    import kasir
+    import pemb_angsuran
+    import logtransaksi
+    import luarkota
+    import pemb_luarkota
+    import logluarkota
+    import dashboard
+    import pelanggan
+    import manajemen_stock
+
     st.sidebar.title("Optik Maroon")
     st.sidebar.title(f"👋 Hai, {st.session_state['user']}")
     
