@@ -573,12 +573,14 @@ def catat_loglensa_supabase(
 
             df_log["timestamp_log"] = pd.to_datetime(
                 df_log["timestamp_log"], errors="coerce"
-            )
+            ).dt.tz_localize(None)  # strip timezone supaya bisa dibanding
+
+            five_min_ago_naive = five_min_ago.replace(tzinfo=None)  # strip juga
 
             mask = (
                 (df_log["status"] == status_log) &
                 (df_log["keterangan"] == keterangan) &
-                (df_log["timestamp_log"] >= five_min_ago)
+                (df_log["timestamp_log"] >= five_min_ago_naive)
             )
 
             duplicate = mask.any()
