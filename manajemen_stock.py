@@ -4,7 +4,14 @@ from datetime import datetime
 from zoneinfo import ZoneInfo
 from utils import get_table_cached, get_supabase
 
-
+def safe_int(val):
+    try:
+        if pd.isna(val):
+            return 0
+        return int(val)
+    except:
+        return 0
+    
 def now_jkt():
     return datetime.now(ZoneInfo("Asia/Jakarta")).replace(microsecond=0)
 
@@ -280,11 +287,11 @@ def run():
         
         col1, col2, col3, col4 = st.columns([2, 2, 2, 1])
         with col1:
-            cari_merk_lensa = st.selectbox("Cari by Merk", options=[None] + merk_options_lensa, placeholder="contoh: Domas", key="cari_merk_lensa")
+            cari_merk_lensa = st.selectbox("Cari by Merk", options=[""] + merk_options_lensa, placeholder="contoh: Domas", key="cari_merk_lensa")
         with col2:
-            cari_tipe_lensa = st.selectbox("Cari by Tipe", options=[None] + tipe_options_lensa, placeholder="contoh: Progressive", key="cari_tipe_lensa")
+            cari_tipe_lensa = st.selectbox("Cari by Tipe", options=[""] + tipe_options_lensa, placeholder="contoh: Progressive", key="cari_tipe_lensa")
         with col3:
-            cari_jenis_lensa = st.selectbox("Cari by Jenis", options=[None] + jenis_options_lensa, placeholder="contoh: Bluray", key="cari_jenis_lensa")
+            cari_jenis_lensa = st.selectbox("Cari by Jenis", options=[""] + jenis_options_lensa, placeholder="contoh: Bluray", key="cari_jenis_lensa")
         with col4:
             st.markdown("<br>", unsafe_allow_html=True)
             if st.button("🔄 Reset", key="reset_lensa_edit"):
@@ -314,16 +321,15 @@ def run():
                     jenis = row["jenis"]
                     sph = row["sph"]
                     cyl = row["cyl"]
+                    stock = safe_int(row["stock"])
                     add_power = row.get("add_power", "")
-                    stock = int(row["stock"] or 0)
-                    harga_modal = int(row["harga_modal"] or 0)
-                    harga_jual = int(row["harga_jual"] or 0)
+                    harga_jual = safe_int(row["harga_jual"])
 
                     with st.container(border=True):
                         col1, col2 = st.columns([4, 1])
                         with col1:
                             st.markdown(f"**{merk} — {tipe} {jenis}**")
-                            st.markdown(f"SPH `{sph}` CYL `{cyl}` Add `{add_power}` | Stock: `{stock}` | Modal: `Rp {harga_modal:,}` | Jual: `Rp {harga_jual:,}`".replace(",", "."))
+                            st.markdown(f"SPH `{sph}` CYL `{cyl}` Add `{add_power}` | Stock: `{stock}` | Jual: `Rp {harga_jual:,}`".replace(",", "."))
                         with col2:
                             if st.button("✏️ Edit", key=f"btn_edit_lensa_{lensa_id}"):
                                 st.session_state["edit_lensa_id"] = lensa_id
@@ -331,13 +337,11 @@ def run():
                     if st.session_state.get("edit_lensa_id") == lensa_id:
                         with st.container(border=True):
                             st.markdown(f"**Edit — {merk} {tipe} {jenis} SPH {sph} CYL {cyl}**")
-                            col1, col2, col3 = st.columns(3)
+                            col1, col2 = st.columns(2)
                             with col1:
                                 stock_baru = st.number_input("Stock", value=stock, min_value=0, key=f"stock_lensa_{lensa_id}")
                             with col2:
-                                harga_modal_baru = st.number_input("Harga Modal", value=harga_modal, min_value=0, step=1000, key=f"modal_lensa_{lensa_id}")
-                            with col3:
-                                harga_jual_baru = st.number_input("Harga Jual", value=harga_jual, min_value=0, step=1000, key=f"jual_lensa_{lensa_id}")
+                               harga_jual_baru = st.number_input("Harga Jual", value=harga_jual, min_value=0, step=1000, key=f"jual_lensa_{lensa_id}")
 
                             col_save, col_cancel = st.columns(2)
                             with col_save:
@@ -345,13 +349,11 @@ def run():
                                     supabase = get_supabase()
                                     supabase.table("lensa").update({
                                         "stock": stock_baru,
-                                        "harga_modal": harga_modal_baru,
                                         "harga_jual": harga_jual_baru
                                     }).eq("id", lensa_id).execute()
 
                                     keterangan = (
                                         f"Revisi: stock {stock}→{stock_baru}, "
-                                        f"harga modal {harga_modal}→{harga_modal_baru}, "
                                         f"harga jual {harga_jual}→{harga_jual_baru}"
                                     )
                                     catat_log_lensa(tipe, merk, jenis, sph, cyl, add_power, "revisi", keterangan, user)
