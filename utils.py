@@ -266,8 +266,8 @@ def generate_id_pemb_skw_supabase(nama, tanggal_ambil):
 
     return f"OMSKW/P/{kode}/{next_num:03}/{tanggal_str}"
 
-# Cari Harga Lensa Stock
 def cari_harga_lensa_stock(df_stock, tipe, jenis, merk, sph, cyl, add, pakai_reseller=True):
+    df_stock = df_stock.copy()
     df_stock.columns = df_stock.columns.str.lower().str.strip().str.replace(" ", "_")
     kolom_harga = 'harga_reseller' if pakai_reseller else 'harga_jual'
 
@@ -277,17 +277,10 @@ def cari_harga_lensa_stock(df_stock, tipe, jenis, merk, sph, cyl, add, pakai_res
             (df_stock['jenis'].str.lower() == jenis.lower()) &
             (df_stock['merk'].str.lower() == merk.lower()) &
             (df_stock['sph'].str.lower() == sph.lower()) &
-            (df_stock['cyl'].str.lower() == cyl.lower()) & 
+            (df_stock['cyl'].str.lower() == cyl.lower()) &
             (df_stock['add_power'].str.lower() == add.lower())
-        ][kolom_harga]\
-        .astype(str)\
-        .str.replace("rp", "", case=False)\
-        .str.replace(".", "")\
-        .str.replace(",", "")\
-        .str.strip()\
-        .astype(int)\
-        .values[0]
-        return harga
+        ][kolom_harga].values[0]
+        return int(float(harga))
     except:
         return None
 

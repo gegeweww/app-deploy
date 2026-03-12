@@ -9,8 +9,6 @@ from utils import (
     catat_loglensa_supabase
 )
 
-ONGKIR = 25000
-
 @st.dialog("✅ Pembayaran Berhasil")
 def dialog_ringkasan_luarkota(data, reset_func):
     st.markdown(f"""
@@ -107,7 +105,6 @@ def run():
             add_l = st.selectbox("Add L", sorted(df_lensa['add_power'].dropna().unique())) if tipe_lensa in ["Progressive", "Kryptok", "Flattop"] else ""
 
     else:
-        df_lensa.columns = df_lensa.columns.str.lower().str.strip().str.replace(" ", "_")
         nama_lensa = st.selectbox("Nama Lensa", sorted(df_lensa[
             (df_lensa['jenis'] == jenis_lensa) &
             (df_lensa['tipe'] == tipe_lensa) &
@@ -140,7 +137,7 @@ def run():
             st.warning("⚠️ Harga lensa stock tidak ditemukan!")
             st.stop()
     else:
-        harga_lensa = cari_harga_lensa_luar(df_lensa, tipe_lensa, jenis_lensa, nama_lensa, sph_r, cyl_r, add_dipakai, False)
+        harga_lensa = cari_harga_lensa_luar(df_lensa, tipe_lensa, jenis_lensa, nama_lensa, sph_r, cyl_r, add_dipakai, pakai_reseller=True)
         if harga_lensa is None:
             st.warning("⚠️ Ukuran tidak sesuai rentang harga manapun!")
             st.stop()
@@ -152,7 +149,8 @@ def run():
     keterangan = st.text_area("Keterangan Tambahan")
 
     # Ongkir hanya untuk status lensa "Pesan"
-    ongkir_item = ONGKIR if status_lensa == "Pesan" else 0
+    ONGKIR_PER_LENSA = 25000
+    ongkir_item = ONGKIR_PER_LENSA if status_lensa == "Pesan" else 0
     subtotal = harga_lensa + potong + tambahan + ongkir_item
 
 
@@ -256,10 +254,9 @@ def run():
 
         # Hitung total (subtotal item - diskon + ongkir 1x)
         total_item = sum(item["subtotal"] - item["diskon"] for item in st.session_state.daftar_item_luar)
-        total = total_item + ONGKIR
+        total = total_item
 
         st.markdown(f"##### Subtotal Item: Rp {total_item:,.0f}")
-        st.markdown(f"##### Ongkir: Rp {ONGKIR:,.0f}")
         st.markdown(f"#### 💰 Total Harga: Rp {total:,.0f}")
 
         via = st.selectbox("Via Pembayaran", ["Cash", "TF BCA", "TF Mandiri"])
@@ -284,7 +281,7 @@ def run():
         supabase = get_supabase()
 
         total_item = sum(item["subtotal"] - item["diskon"] for item in st.session_state.daftar_item_luar)
-        total = total_item + ONGKIR
+        total = total_item
 
         # ===================== INSERT HEADER =====================
         insert_row_supabase("pesanan_luar_kota", {
