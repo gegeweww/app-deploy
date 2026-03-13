@@ -33,7 +33,7 @@ def run():
         # Beautify header
         df_display.columns = [col.replace("_", " ").title() for col in df_display.columns]
 
-        st.dataframe(df_display, width='stretch')
+        st.dataframe(df_display, use_container_width=True)
 
     # ==============================
     # FILTER SECTION

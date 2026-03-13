@@ -106,7 +106,7 @@ def run():
             df_display.index = df_display.index + 1
             df_display.index.name = "No"
             df_display.columns = [col.replace('_', ' ').title() for col in df_display.columns]
-            st.dataframe(df_display, width='stretch')
+            st.dataframe(df_display, use_container_width=True)
         else:
             st.info("Tidak ada data ditemukan.")
 

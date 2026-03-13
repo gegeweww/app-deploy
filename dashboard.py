@@ -107,7 +107,7 @@ def run():
         ),
         separators = ".,"
     )
-    st.plotly_chart(fig, width='stretch')
+    st.plotly_chart(fig, use_container_width=True)
 
     st.divider()
 
@@ -137,4 +137,4 @@ def run():
     df_latest_display = df_latest_display.reset_index(drop=True)
     df_latest_display.index = df_latest_display.index + 1
     df_latest_display.index.name = "No"
-    st.dataframe(df_latest_display, width='stretch')
+    st.dataframe(df_latest_display, use_container_width=True)
