@@ -29,24 +29,21 @@ if "user" not in st.session_state:
 if "page" not in st.session_state:
     st.session_state["page"] = "login"
     
-USERNAME = st.secrets["auth"]["username"]
 PASSWORD = st.secrets["auth"]["password"]
-
 
 def login():
     st.title("Login")
 
-    username = st.text_input("Username")
     password = st.text_input("Password", type="password")
 
-    if st.button("login"):
-        if username == USERNAME and password == PASSWORD:
+    if st.button("Masuk"):
+        if password == st.secrets["auth"]["password"]:
             st.success("Login berhasil!")
             st.session_state["logged_in"] = True
             st.session_state["page"] = "pilih_user"
             st.rerun()
         else:
-            st.error("Username atau password salah!")
+            st.error("Password salah!")
 
 def pilih_user():
     st.title("Optik Maroon Pontianak")
