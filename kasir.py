@@ -126,12 +126,12 @@ def run():
             sph_r = st.selectbox("SPH R", sph_list, index = sph_list.index("0.00"))
             cyl_r = st.selectbox("CYL R", cyl_list, index = cyl_list.index("0.00"))
             axis_r = st.selectbox("Axis R", list(range(0, 181))) if cyl_r != "0.00" else None
-            add_r = st.selectbox("Add R", sorted(df_lensa['add_power'].dropna().unique())) if tipe_lensa in ["Progressive", "Kryptok", "Flattop"] else ""
+            add_r = st.selectbox("Add R", sorted(df_lensa['add_power'].dropna().unique())) if tipe_lensa in ["Progressive", "Kryptok", "Flattop"] else None
         with colL:
             sph_l = st.selectbox("SPH L", sph_list, index = sph_list.index("0.00"))
             cyl_l = st.selectbox("CYL L", cyl_list, index = cyl_list.index("0.00"))
             axis_l = st.selectbox("Axis L", list(range(0, 181))) if cyl_l != "0.00" else None
-            add_l = st.selectbox("Add L", sorted(df_lensa['add_power'].dropna().unique())) if tipe_lensa in ["Progressive", "Kryptok", "Flattop"] else ""
+            add_l = st.selectbox("Add L", sorted(df_lensa['add_power'].dropna().unique())) if tipe_lensa in ["Progressive", "Kryptok", "Flattop"] else None
     
     else:
         df_lensa.columns = df_lensa.columns.str.lower().str.strip().str.replace(" ", "_")
@@ -162,9 +162,14 @@ def run():
 
 
     # Konversi nilai add (pakai add_r, diasumsikan sama untuk L dan R)
-    add_dipakai = add_r if tipe_lensa in ["Progressive", "Kryptok", "Flattop"] else ""
+    add_dipakai = add_r if tipe_lensa in ["Progressive", "Kryptok", "Flattop"] else None
     if status_lensa == "Stock":
-        harga_lensa = cari_harga_lensa_stock(df_lensa, tipe_lensa, jenis_lensa, merk_lensa, sph_r, cyl_r, add_dipakai, pakai_reseller=False )
+        harga_lensa = cari_harga_lensa_stock(
+            df_lensa, tipe_lensa, jenis_lensa, merk_lensa,
+            float(sph_r), float(cyl_r), 
+            float(add_dipakai) if add_dipakai is not None else None,
+            pakai_reseller=False
+        )
         if harga_lensa is None:
             st.warning("⚠️ Harga lensa stock tidak ditemukan!")
             st.stop()
@@ -240,7 +245,7 @@ def run():
                     (df_lensa_stock['merk'] == merk_lensa) &
                     (df_lensa_stock['sph'] == sph_r) &
                     (df_lensa_stock['cyl'] == cyl_r) &
-                    (df_lensa_stock['add_power'] == add_r)
+                    (df_lensa_stock['add_power'] == add_r) if add_r is not None else (df_lensa_stock['add_power'].isna())
                 )
             if kondisi_kanan.any():
                 idx = kondisi_kanan.idxmax()

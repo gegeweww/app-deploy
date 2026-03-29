@@ -266,110 +266,103 @@ def generate_id_pemb_skw_supabase(nama, tanggal_ambil):
 
     return f"OMSKW/P/{kode}/{next_num:03}/{tanggal_str}"
 
+# Cari harga lensa stock
 def cari_harga_lensa_stock(df_stock, tipe, jenis, merk, sph, cyl, add, pakai_reseller=True):
-    df_stock = df_stock.copy()
-    df_stock.columns = df_stock.columns.str.lower().str.strip().str.replace(" ", "_")
+    df = df_stock.copy()
+    df.columns = df.columns.str.lower().str.strip().str.replace(" ", "_")
     kolom_harga = 'harga_reseller' if pakai_reseller else 'harga_jual'
 
     try:
-        harga = df_stock[
-            (df_stock['tipe'].str.lower() == tipe.lower()) &
-            (df_stock['jenis'].str.lower() == jenis.lower()) &
-            (df_stock['merk'].str.lower() == merk.lower()) &
-            (df_stock['sph'].str.lower() == sph.lower()) &
-            (df_stock['cyl'].str.lower() == cyl.lower()) &
-            (df_stock['add_power'].str.lower() == add.lower())
-        ][kolom_harga].values[0]
-        return int(float(harga))
+        sph = round(float(sph), 2)
+        cyl = round(float(cyl), 2)
+        add = round(float(add), 2) if add is not None else None
     except:
         return None
 
-# Cari Harga Lensa Luar Stock
-def cari_harga_lensa_luar(
-    df, tipe, jenis, nama_lensa,
-    sph, cyl, add,
-    pakai_reseller=True
-):
-    df = df.copy()
-    df.columns = df.columns.str.lower().str.strip()
-
-    kolom_harga = "harga_reseller" if pakai_reseller else "harga_jual"
-
-    try:
-        sph = float(str(sph).replace(",", "."))
-        cyl = float(str(cyl).replace(",", "."))
-        add = float(str(add).replace(",", ".")) if add not in ["", None] else None
-    except:
-        return None
+    # Convert kolom ke numeric dulu
+    df['sph'] = pd.to_numeric(df['sph'], errors='coerce')
+    df['cyl'] = pd.to_numeric(df['cyl'], errors='coerce')
+    df['add_power'] = pd.to_numeric(df['add_power'], errors='coerce')
 
     df_filtered = df[
-        (df["tipe"].str.lower() == str(tipe).lower()) &
-        (df["jenis"].str.lower() == str(jenis).lower()) &
-        (df["nama_lensa"].str.lower() == str(nama_lensa).lower())
-    ].copy()
+        (df['tipe'].str.lower() == tipe.lower()) &
+        (df['jenis'].str.lower() == jenis.lower()) &
+        (df['merk'].str.lower() == merk.lower()) &
+        (df['sph'].round(2) == sph) &
+        (df['cyl'].round(2) == cyl)
+    ]
+
+    if add is not None:
+        df_filtered = df_filtered[df_filtered['add_power'].round(2) == add]
+    else:
+        df_filtered = df_filtered[df_filtered['add_power'].isna()]
 
     if df_filtered.empty:
         return None
 
-    # Convert range ke numeric
-    range_cols = [
-        "sph_min", "sph_max",
-        "cyl_min", "cyl_max",
-        "add_min_power", "add_max_power"
+    return int(float(df_filtered.iloc[0][kolom_harga]))
+
+# Cari Harga Lensa Luar Stock
+def cari_harga_lensa_luar(df, tipe, jenis, nama_lensa, sph, cyl, add, pakai_reseller=True):
+    df = df.copy()
+    df.columns = df.columns.str.lower().str.strip()
+    kolom_harga = "harga_reseller" if pakai_reseller else "harga_jual"
+
+    try:
+        sph = round(float(sph), 2)
+        cyl = round(float(cyl), 2)
+        add = round(float(add), 2) if add not in ["", None] else None
+    except:
+        return None
+
+    # Filter awal
+    df = df[
+        (df["tipe"].str.lower() == tipe.lower()) &
+        (df["jenis"].str.lower() == jenis.lower()) &
+        (df["nama_lensa"].str.lower() == nama_lensa.lower())
     ]
 
-    for col in range_cols:
-        if col in df_filtered.columns:
-            df_filtered[col] = pd.to_numeric(
-                df_filtered[col], errors="coerce"
-            )
+    if df.empty:
+        return None
 
     # =========================================
-    # Tambahkan PRIORITAS
+    # FILTER NUMERIC (NO LOOP 🔥)
     # =========================================
-    def hitung_prioritas(row):
-        prioritas = 0
 
-        # Punya CYL range
-        if pd.notna(row.get("cyl_min")) and pd.notna(row.get("cyl_max")):
-            prioritas += 2
+    query = (
+        (df["sph_min"] <= sph) &
+        (df["sph_max"] >= sph)
+    )
 
-        # Punya ADD range
-        if pd.notna(row.get("add_min_power")) and pd.notna(row.get("add_max_power")):
-            prioritas += 1
+    # CYL optional
+    query &= (
+        df["cyl_min"].isna() |
+        ((df["cyl_min"] <= cyl) & (df["cyl_max"] >= cyl))
+    )
 
-        return prioritas
+    # ADD optional
+    if add is not None:
+        query &= (
+            df["add_min_power"].isna() |
+            ((df["add_min_power"] <= add) & (df["add_max_power"] >= add))
+        )
+    else:
+        query &= df["add_min_power"].isna()
 
-    df_filtered["prioritas"] = df_filtered.apply(hitung_prioritas, axis=1)
+    df_filtered = df[query]
 
-    # Sort prioritas tertinggi dulu
+    if df_filtered.empty:
+        return None
+
+    # Ambil prioritas terbaik (opsional tapi bagus)
+    df_filtered["prioritas"] = (
+        df_filtered["cyl_min"].notna().astype(int) * 2 +
+        df_filtered["add_min_power"].notna().astype(int)
+    )
+
     df_filtered = df_filtered.sort_values("prioritas", ascending=False)
 
-    # =========================================
-    # Loop cek range
-    # =========================================
-    for _, row in df_filtered.iterrows():
-
-        # SPH wajib cocok
-        if not (row["sph_min"] <= sph <= row["sph_max"]):
-            continue
-
-        # CYL kalau row punya range
-        if pd.notna(row.get("cyl_min")) and pd.notna(row.get("cyl_max")):
-            if not (row["cyl_min"] <= cyl <= row["cyl_max"]):
-                continue
-
-        # ADD kalau ada
-        if add is not None and \
-           pd.notna(row.get("add_min_power")) and \
-           pd.notna(row.get("add_max_power")):
-
-            if not (row["add_min_power"] <= add <= row["add_max_power"]):
-                continue
-
-        return int(row[kolom_harga])
-
-    return None
+    return int(df_filtered.iloc[0][kolom_harga])
 
 # Buat status log untuk frame
 def buat_logframe_status(source: str, mode=None, status_frame=None, merk=None, kode=None, jumlah_input=None, stock_lama=None, stock_baru=None, id_transaksi=None, nama=None):
