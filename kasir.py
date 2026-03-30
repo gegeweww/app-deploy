@@ -115,6 +115,7 @@ def run():
     # Nama Lensa hanya untuk non-stock
     nama_lensa = ""
     if status_lensa == "Stock":
+        keterangan = st.text_input("Keterangan", key="keterangan")
         st.markdown("**Ukuran Lensa**")     
         colR, colL = st.columns(2)
         # List Ukuran
@@ -134,6 +135,7 @@ def run():
             add_l = st.selectbox("Add L", sorted(df_lensa['add_power'].dropna().unique())) if tipe_lensa in ["Progressive", "Kryptok", "Flattop"] else None
     
     else:
+        keterangan = st.text_input("Keterangan", key="keterangan")
         df_lensa.columns = df_lensa.columns.str.lower().str.strip().str.replace(" ", "_")
         nama_lensa = st.selectbox("Nama Lensa", sorted(df_lensa[
             (df_lensa['jenis'] == jenis_lensa) & 
@@ -160,7 +162,7 @@ def run():
             axis_l = st.selectbox("Axis L", list(range(0, 181))) if cyl_l != "0.00" else None
             add_l = st.selectbox("Add L", add_range) if tipe_lensa in ["Progressive", "Kryptok", "Flattop"] else ""
 
-
+    keterangan = str(keterangan).strip().lower()
     # Konversi nilai add (pakai add_r, diasumsikan sama untuk L dan R)
     add_dipakai = add_r if tipe_lensa in ["Progressive", "Kryptok", "Flattop"] else None
     if status_lensa == "Stock":
@@ -303,6 +305,7 @@ def run():
             "harga_frame": harga_frame,
             "harga_lensa": harga_lensa,
             "tambahan": tambahan,
+            "keterangan": keterangan,
             "diskon": diskon_nilai,
             "subtotal": harga_setelah_diskon
         })
@@ -424,6 +427,7 @@ def run():
                 "harga_frame": item['harga_frame'],
                 "harga_lensa": item['harga_lensa'],
                 "tambahan": item['tambahan'],
+                "keterangan": item['keterangan'],
                 "diskon": item['diskon'],
                 "subtotal": item['subtotal'],
                 "total_harga": item['subtotal_setelah_pembulatan'],
