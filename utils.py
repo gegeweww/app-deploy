@@ -53,22 +53,19 @@ def get_table_raw(table_name):
 
         page += 1
 
-    # HARUS di luar loop
     df = pd.DataFrame(all_data)
 
-    if df.empty:
-        return pd.DataFrame()
+    if not df.empty:
+        df = df.replace([np.inf, -np.inf], np.nan)
 
-    df = df.replace([np.inf, -np.inf], np.nan)
+        numeric_cols = ["harga_modal", "harga_jual", "stock"]
 
-    numeric_cols = ["harga_modal", "harga_jual", "stock"]
-
-    for col in numeric_cols:
-        if col in df.columns:
-            df[col] = pd.to_numeric(
-                df[col],
-                errors="coerce"
-            ).fillna(0)
+        for col in numeric_cols:
+            if col in df.columns:
+                df[col] = pd.to_numeric(
+                    df[col],
+                    errors="coerce"
+                ).fillna(0)
 
     return df
 
