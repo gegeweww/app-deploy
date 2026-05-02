@@ -55,6 +55,10 @@ def pilih_user():
         format_func=lambda x: x if x else "— pilih user —"
     )
     if st.button("Lanjut"):
+        if not selected:
+            st.warning("Pilih user dulu.")
+            st.stop()
+
         st.session_state["user"] = selected
         st.session_state["page"] = "menu"
         st.rerun()

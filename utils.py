@@ -36,26 +36,55 @@ def get_table_raw(table_name):
     page_size = 1000
 
     while True:
-        response = supabase.table(table_name) \
-            .select("*") \
-            .range(page * page_size, (page + 1) * page_size - 1) \
+        response = (
+            supabase.table(table_name)
+            .select("*")
+            .range(page * page_size, (page + 1) * page_size - 1)
             .execute()
-        
+        )
+
         if not response.data:
             break
-        
+
         all_data.extend(response.data)
-        
+
         if len(response.data) < page_size:
             break
-        
+
         page += 1
 
-    return pd.DataFrame(all_data)
+    # HARUS di luar loop
+    df = pd.DataFrame(all_data)
 
-@st.cache_data(ttl=60)
+    if df.empty:
+        return pd.DataFrame()
+
+    df = df.replace([np.inf, -np.inf], np.nan)
+
+    numeric_cols = ["harga_modal", "harga_jual", "stock"]
+
+    for col in numeric_cols:
+        if col in df.columns:
+            df[col] = pd.to_numeric(
+                df[col],
+                errors="coerce"
+            ).fillna(0)
+
+    return df
+
+@st.cache_data(ttl=300)
 def get_table_cached(table_name):
-    return get_table_raw(table_name)
+    try:
+        df = get_table_raw(table_name)
+
+        if df is None:
+            return pd.DataFrame()
+
+        return df
+
+    except Exception as e:
+        print(f"Error get_table_cached({table_name}): {e}")
+        return pd.DataFrame()
   
 # Tambahkan satu baris ke tabel supabase  
 def insert_row_supabase(table_name, data_dict):
