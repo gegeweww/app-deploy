@@ -54,7 +54,7 @@ def run():
 
             row_id = int(row["id"].values[0])
             stock_lama = int(row["stock"].values[0])
-            stock_baru = stock_lama + jumlah_input
+            stock_baru = int(stock_lama) + int(jumlah_input)
 
             response = supabase.table("frames") \
                 .update({"stock": stock_baru}) \
@@ -105,8 +105,8 @@ def run():
                 return
 
             response = supabase.table("frames").insert({
-                "merk": selected_merk,
-                "kode": selected_kode,
+                "merk": str(selected_merk).strip(),
+                "kode": str(selected_kode).strip(),
                 "distributor": distributor,
                 "harga_modal": harga_modal,
                 "harga_jual": harga_jual,
@@ -159,8 +159,8 @@ def run():
                 return
 
             response = supabase.table("frames").insert({
-                "merk": selected_merk,
-                "kode": selected_kode,
+                "merk": str(selected_merk).strip(),
+                "kode": str(selected_kode).strip(),
                 "distributor": distributor,  # 🔥 ambil otomatis
                 "harga_modal": harga_modal,
                 "harga_jual": harga_jual,
