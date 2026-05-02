@@ -42,7 +42,7 @@ def run():
         kode_list = sorted(filtered_df["kode"].unique())
 
         selected_kode = st.selectbox("Pilih Kode Frame:", kode_list)
-        jumlah_input = st.number_input("Jumlah", min_value=1, step=1)
+        jumlah_input = int(st.number_input("Jumlah", min_value=1, step=1))
 
         if st.button("Tambah"):
 
