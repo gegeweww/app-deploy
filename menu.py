@@ -8,6 +8,7 @@ def show_menu():
     import loglensa
     import iframe
     import ilensa
+    import inputxlsx
     import kasir
     import pemb_angsuran
     import logtransaksi
@@ -42,7 +43,8 @@ def show_menu():
         "Log Lensa",
         "Input Stock Frame",
         "Input Stock Lensa",
-        "Manajemen Stock"
+        "Manajemen Stock",
+        "Input Via Excel"
     ])
     if menu == "Dashboard":
         dashboard.run()
@@ -74,3 +76,5 @@ def show_menu():
         ilensa.run()
     elif menu == "Manajemen Stock":
         manajemen_stock.run()
+    elif menu == "Input Via Excel":
+        inputxlsx.run()
