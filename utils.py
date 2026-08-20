@@ -15,10 +15,25 @@ def get_supabase():
 def set_font():
     st.markdown("""
         <style>
+        /* 1. Import KEDUA font: Outfit DAN Material Symbols */
         @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200');
 
-        html, body, div, span, input, textarea, select, label, button, p, h1, h2, h3, h4, h5, h6 {
+        /* 2. Set font Outfit ke elemen-elemen umum saja (JANGAN pakai tanda bintang * atau div) */
+        html, body, p, h1, h2, h3, h4, h5, h6, input, textarea, select, label, button {
             font-family: 'Outfit', sans-serif !important;
+        }
+
+        /* 3. PAKSA SEMUA IKON MATERIAL STREAMLIT balik ke font ikon */
+        [data-testid="stIconMaterial"],
+        [data-testid="stSidebarCollapseButton"] *,
+        [data-testid="stSidebarExpandButton"] *,
+        .st-emotion-cache-12140ld,
+        i {
+            font-family: 'Material Symbols Outlined' !important;
+            font-weight: normal !important;
+            font-style: normal !important;
+            text-transform: none !important;
         }
         </style>
     """, unsafe_allow_html=True)
