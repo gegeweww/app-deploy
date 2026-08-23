@@ -55,6 +55,11 @@ def run():
     tanggal_transaksi = st.date_input("📅 Tanggal Transaksi", value=date.today(), format="DD/MM/YYYY")
     tanggal_str = tanggal_transaksi.strftime("%d-%m-%Y")
 
+    st.markdown("""
+        Jika tanpa nama, isi:
+        - Nama: -
+        - No HP: -
+        """)
     nama = st.text_input("Nama Konsumen", key="nama_konsumen")
     kontak = st.text_input("No HP", key="no_hp")
     if not nama or not kontak:
