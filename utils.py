@@ -19,7 +19,7 @@ def set_font():
         @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600&display=swap');
         @import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200');
 
-        /* 2. Set font Outfit ke elemen-elemen umum saja (JANGAN pakai tanda bintang * atau div) */
+        /* 2. Set font Outfit ke elemen-elemen umum */
         html, body, p, h1, h2, h3, h4, h5, h6, input, textarea, select, label, button {
             font-family: 'Outfit', sans-serif !important;
         }
