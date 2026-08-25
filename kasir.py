@@ -58,7 +58,7 @@ def run():
     st.markdown("""
         Jika tanpa nama, isi:
         - Nama: -
-        - No HP: -
+        - No HP: 0
         """)
     nama = st.text_input("Nama Konsumen", key="nama_konsumen")
     kontak = st.text_input("No HP", key="no_hp")
