@@ -90,7 +90,7 @@ def run():
     else:
         merk_frame, kode_frame = "", ""
         
-    status_lensa = st.selectbox("Status Lensa", ["Stock", "Inti", "Pesan", "Overlens", "Kacamata Baca"])
+    status_lensa = st.selectbox("Status Lensa", ["Stock", "Inti", "Pesan", "Overlens", "Kacamata Baca", "Hanya Frame"])
     if status_lensa == "Stock":
         df_lensa = df_lensa_stock.copy()
         # Tipe Lensa
