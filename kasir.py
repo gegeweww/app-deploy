@@ -443,7 +443,7 @@ def run():
             # UPDATE STOCK FRAME
             # ==========================
             if item['status_frame'] == "Stock":
-                frame = supabase.table("frames") \
+                frame = supabase.schema("optik").table("frames") \
                     .select("stock") \
                     .eq("merk", item['merk_frame']) \
                     .eq("kode", item['kode_frame']) \
@@ -453,7 +453,7 @@ def run():
                     stock_lama = frame.data[0]["stock"] or 0
                     stock_baru = max(0, stock_lama - 1)
 
-                    supabase.table("frames") \
+                    supabase.schema("optik").table("frames") \
                         .update({"stock": stock_baru}) \
                         .eq("merk", item['merk_frame']) \
                         .eq("kode", item['kode_frame']) \
@@ -478,7 +478,7 @@ def run():
                     add = item[f"add_{side}"]
 
                     # Ambil data dulu
-                    query = supabase.table("lensa") \
+                    query = supabase.schema("optik").table("lensa") \
                         .select("stock") \
                         .eq("tipe", item['tipe_lensa']) \
                         .eq("jenis", item['jenis_lensa']) \
@@ -498,7 +498,7 @@ def run():
                         stock_baru = max(0, stock_lama - 1)
 
                         # 🔥 UPDATE QUERY TERPISAH
-                        update_query = supabase.table("lensa") \
+                        update_query = supabase.schema("optik").table("lensa") \
                             .update({"stock": stock_baru}) \
                             .eq("tipe", item['tipe_lensa']) \
                             .eq("jenis", item['jenis_lensa']) \
@@ -529,7 +529,7 @@ def run():
                         )
 
         # Simpan pembayaran
-        existing = supabase.table("pembayaran") \
+        existing = supabase.schema("optik").table("pembayaran") \
             .select("id") \
             .eq("id_transaksi", id_transaksi) \
             .execute()

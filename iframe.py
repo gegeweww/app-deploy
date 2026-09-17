@@ -62,7 +62,7 @@ def run():
 
             try:
                 response = (
-                    supabase.table("frames")
+                    supabase.schema("optik").table("frames")
                     .update({"stock": stock_baru})
                     .eq("id", row_id)
                     .execute()
@@ -116,7 +116,7 @@ def run():
                 return
 
             try:
-                response = supabase.table("frames").insert({
+                response = supabase.schema("optik").table("frames").insert({
                     "merk": selected_merk,
                     "kode": selected_kode,
                     "distributor": distributor,
@@ -186,7 +186,7 @@ def run():
                 return
 
             try:
-                response = supabase.table("frames").insert({
+                response = supabase.schema("optik").table("frames").insert({
                     "merk": selected_merk,
                     "kode": selected_kode,
                     "distributor": distributor,

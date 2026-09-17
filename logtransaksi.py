@@ -228,7 +228,7 @@ def run():
                             if st.button("💾 Simpan", key=f"simpan_koreksi_{detail_id}"):
 
                                 # Update transaksi_detail
-                                supabase.table("transaksi_detail").update({
+                                supabase.schema("optik").table("transaksi_detail").update({
                                     "merk_frame": merk_baru,
                                     "kode_frame": kode_baru
                                 }).eq("id", detail_id).execute()
@@ -241,10 +241,10 @@ def run():
                                 if not row_lama.empty:
                                     id_lama = int(row_lama["id"].values[0])
                                     stock_lama_val = int(row_lama["stock"].values[0] or 0)
-                                    supabase.table("frames").update({
+                                    supabase.schema("optik").table("frames").update({
                                         "stock": stock_lama_val + 1
                                     }).eq("id", id_lama).execute()
-                                    supabase.table("log_frames").insert({
+                                    supabase.schema("optik").table("log_frames").insert({
                                         "timestamp_log": pd.Timestamp.now().strftime("%Y-%m-%d %H:%M:%S"),
                                         "merk": merk_frame,
                                         "kode": kode_frame,
@@ -261,10 +261,10 @@ def run():
                                 if not row_baru.empty:
                                     id_baru = int(row_baru["id"].values[0])
                                     stock_baru_val = int(row_baru["stock"].values[0] or 0)
-                                    supabase.table("frames").update({
+                                    supabase.schema("optik").table("frames").update({
                                         "stock": stock_baru_val - 1
                                     }).eq("id", id_baru).execute()
-                                    supabase.table("log_frames").insert({
+                                    supabase.schema("optik").table("log_frames").insert({
                                         "timestamp_log": pd.Timestamp.now().strftime("%Y-%m-%d %H:%M:%S"),
                                         "merk": merk_baru,
                                         "kode": kode_baru,
@@ -325,10 +325,10 @@ def run():
                                 if not row_rusak.empty:
                                     id_rusak = int(row_rusak["id"].values[0])
                                     stock_rusak = int(row_rusak["stock"].values[0] or 0)
-                                    supabase.table("frames").update({
+                                    supabase.schema("optik").table("frames").update({
                                         "stock": stock_rusak - 1
                                     }).eq("id", id_rusak).execute()
-                                    supabase.table("log_frames").insert({
+                                    supabase.schema("optik").table("log_frames").insert({
                                         "timestamp_log": pd.Timestamp.now().strftime("%Y-%m-%d %H:%M:%S"),
                                         "merk": merk_frame,
                                         "kode": kode_frame,
@@ -345,10 +345,10 @@ def run():
                                 if not row_pgn.empty:
                                     id_pgn = int(row_pgn["id"].values[0])
                                     stock_pgn = int(row_pgn["stock"].values[0] or 0)
-                                    supabase.table("frames").update({
+                                    supabase.schema("optik").table("frames").update({
                                         "stock": stock_pgn - 1
                                     }).eq("id", id_pgn).execute()
-                                    supabase.table("log_frames").insert({
+                                    supabase.schema("optik").table("log_frames").insert({
                                         "timestamp_log": pd.Timestamp.now().strftime("%Y-%m-%d %H:%M:%S"),
                                         "merk": merk_pengganti,
                                         "kode": kode_pengganti,
@@ -358,7 +358,7 @@ def run():
                                     }).execute()
 
                                 # Update transaksi_detail dengan frame pengganti
-                                supabase.table("transaksi_detail").update({
+                                supabase.schema("optik").table("transaksi_detail").update({
                                     "merk_frame": merk_pengganti,
                                     "kode_frame": kode_pengganti
                                 }).eq("id", detail_id).execute()
@@ -449,10 +449,10 @@ def run():
                                 if not row_lama.empty:
                                     id_lama = int(row_lama["id"].values[0])
                                     stock_lama_v = int(row_lama["stock"].values[0] or 0)
-                                    supabase.table("frames").update({
+                                    supabase.schema("optik").table("frames").update({
                                         "stock": stock_lama_v + 1
                                     }).eq("id", id_lama).execute()
-                                    supabase.table("log_frames").insert({
+                                    supabase.schema("optik").table("log_frames").insert({
                                         "timestamp_log": pd.Timestamp.now().strftime("%Y-%m-%d %H:%M:%S"),
                                         "merk": merk_frame,
                                         "kode": kode_frame,
@@ -465,10 +465,10 @@ def run():
                                 if not row_tukar.empty:
                                     id_tukar = int(row_tukar["id"].values[0])
                                     stock_tukar_v = int(row_tukar["stock"].values[0] or 0)
-                                    supabase.table("frames").update({
+                                    supabase.schema("optik").table("frames").update({
                                         "stock": stock_tukar_v - 1
                                     }).eq("id", id_tukar).execute()
-                                    supabase.table("log_frames").insert({
+                                    supabase.schema("optik").table("log_frames").insert({
                                         "timestamp_log": pd.Timestamp.now().strftime("%Y-%m-%d %H:%M:%S"),
                                         "merk": merk_tukar,
                                         "kode": kode_tukar,
@@ -478,7 +478,7 @@ def run():
                                     }).execute()
 
                                 # Update transaksi_detail
-                                supabase.table("transaksi_detail").update({
+                                supabase.schema("optik").table("transaksi_detail").update({
                                     "merk_frame": merk_tukar,
                                     "kode_frame": kode_tukar,
                                     "harga_frame": harga_frame_baru,
@@ -487,7 +487,7 @@ def run():
                                 }).eq("id", detail_id).execute()
 
                                 # Update transaksi
-                                supabase.table("transaksi").update({
+                                supabase.schema("optik").table("transaksi").update({
                                     "total_harga": total_baru
                                 }).eq("id_transaksi", trx_id).execute()
 
@@ -502,7 +502,7 @@ def run():
                                     status_baru = "lunas" if sisa_baru == 0 else "belum lunas"
 
                                     last_pemb = df_pemb_trx.sort_values("pembayaran_ke").iloc[-1]
-                                    supabase.table("pembayaran").update({
+                                    supabase.schema("optik").table("pembayaran").update({
                                         "total_harga": total_baru,
                                         "sisa": sisa_baru,
                                         "status": status_baru

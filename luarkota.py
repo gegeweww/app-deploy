@@ -327,7 +327,7 @@ def run():
                     add = item[f"add_{side}"]
 
                     query = (
-                        supabase.table("lensa")
+                        supabase.schema("optik").table("lensa")
                         .select("id, stock")
                         .eq("tipe", item["tipe_lensa"])
                         .eq("jenis", item["jenis_lensa"])
@@ -353,7 +353,7 @@ def run():
                         st.warning(f"Stock habis: {item['merk_lensa']} {item['tipe_lensa']} {item['jenis_lensa']} SPH {sph} CYL {cyl}")
                         st.stop()
 
-                    supabase.table("lensa") \
+                    supabase.schema("optik").table("lensa") \
                         .update({"stock": stock_lama - 1}) \
                         .eq("id", record["id"]) \
                         .execute()

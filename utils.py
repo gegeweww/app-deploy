@@ -41,7 +41,7 @@ def set_font():
 # Baca isi database
 def get_dataframe_supabase(table_name):
     supabase = get_supabase()
-    response = supabase.table(table_name).select("*").execute()
+    response = supabase.schema("optik").table(table_name).select("*").execute()
     return pd.DataFrame(response.data)
 
 def get_table_raw(table_name):
@@ -52,7 +52,7 @@ def get_table_raw(table_name):
 
     while True:
         response = (
-            supabase.table(table_name)
+            supabase.schema("optik").table(table_name)
             .select("*")
             .range(page * page_size, (page + 1) * page_size - 1)
             .execute()
@@ -118,7 +118,7 @@ def insert_row_supabase(table_name, data_dict):
             clean_data[key] = None
         else:
             clean_data[key] = value
-    response = supabase.table(table_name).insert(clean_data).execute()
+    response = supabase.schema("optik").table(table_name).insert(clean_data).execute()
     return response
 
 def get_or_create_pelanggan_id_supabase(nama, no_hp):
@@ -139,7 +139,7 @@ def get_or_create_pelanggan_id_supabase(nama, no_hp):
     # ==============================
     # 1️⃣ Cek EXACT MATCH nama + no_hp
     # ==============================
-    existing = supabase.table("pelanggan") \
+    existing = supabase.schema("optik").table("pelanggan") \
         .select("id_pelanggan") \
         .eq("nama", nama_clean) \
         .eq("no_hp", no_hp_clean) \
@@ -151,7 +151,7 @@ def get_or_create_pelanggan_id_supabase(nama, no_hp):
     # ==============================
     # 2️⃣ Generate ID baru
     # ==============================
-    response_all = supabase.table("pelanggan") \
+    response_all = supabase.schema("optik").table("pelanggan") \
         .select("id_pelanggan") \
         .execute()
 
@@ -175,7 +175,7 @@ def get_or_create_pelanggan_id_supabase(nama, no_hp):
     # ==============================
     # 3️⃣ Insert pelanggan baru
     # ==============================
-    insert_result = supabase.table("pelanggan").insert({
+    insert_result = supabase.schema("optik").table("pelanggan").insert({
         "id_pelanggan": id_baru,
         "nama": nama_clean,
         "no_hp": no_hp_clean
@@ -191,7 +191,7 @@ def generate_id_transaksi_supabase(tanggal_transaksi):
     supabase = get_supabase()
 
     # Ambil semua id_transaksi
-    response = supabase.table("transaksi") \
+    response = supabase.schema("optik").table("transaksi") \
         .select("id_transaksi") \
         .execute()
 
@@ -223,7 +223,7 @@ def generate_id_skw_supabase(nama, tanggal_ambil):
     tanggal_str = pd.to_datetime(tanggal_ambil).strftime("%d-%m-%Y")
 
     # Ambil semua id_transaksi yang valid
-    response = supabase.table("pesanan_luar_kota") \
+    response = supabase.schema("optik").table("pesanan_luar_kota") \
         .select("id_transaksi") \
         .execute()
 
@@ -251,7 +251,7 @@ def generate_id_skw_supabase(nama, tanggal_ambil):
 def generate_id_pembayaran_supabase(tanggal_pembayaran):
     supabase = get_supabase()
 
-    response = supabase.table("pembayaran") \
+    response = supabase.schema("optik").table("pembayaran") \
         .select("id_pembayaran") \
         .execute()
 
@@ -283,7 +283,7 @@ def generate_id_pemb_skw_supabase(nama, tanggal_ambil):
     kode = "01" if nama == "Nelly" else "02"
     tanggal_str = pd.to_datetime(tanggal_ambil).strftime("%d-%m-%Y")
 
-    response = supabase.table("pembayaran_luar_kota") \
+    response = supabase.schema("optik").table("pembayaran_luar_kota") \
         .select("id_pembayaran") \
         .execute()
 
@@ -472,7 +472,7 @@ def catat_logframe_supabase(
     # CEK DUPLICATE FRAME LOG DI SUPABASE
     # ==============================
 
-    response = supabase.table("log_frames") \
+    response = supabase.schema("optik").table("log_frames") \
         .select("*") \
         .eq("merk", merk) \
         .eq("kode", kode) \
@@ -493,7 +493,7 @@ def catat_logframe_supabase(
     # ==============================
 
     if not duplicate:
-        supabase.table("log_frames").insert({
+        supabase.schema("optik").table("log_frames").insert({
             "timestamp_log": timestamp_str,
             "merk": merk,
             "kode": kode,
@@ -574,7 +574,7 @@ def catat_loglensa_supabase(
     # CEK DUPLICATE
     # ==============================
 
-    response = supabase.table("log_lensa") \
+    response = supabase.schema("optik").table("log_lensa") \
         .select("*") \
         .eq("merk", merk) \
         .eq("jenis", jenis) \
@@ -617,7 +617,7 @@ def catat_loglensa_supabase(
     # ==============================
 
     if not duplicate:
-        supabase.table("log_lensa").insert({
+        supabase.schema("optik").table("log_lensa").insert({
             "timestamp_log": timestamp.strftime("%Y-%m-%d %H:%M:%S"),
             "tipe": tipe,
             "merk": merk,

@@ -164,7 +164,7 @@ def run():
                                     st.info("No HP tidak berubah.")
                                 else:
                                     supabase = get_supabase()
-                                    supabase.table("pelanggan") \
+                                    supabase.schema("optik").table("pelanggan") \
                                         .update({"no_hp": no_hp_baru.strip()}) \
                                         .eq("id_pelanggan", id_pel) \
                                         .execute()

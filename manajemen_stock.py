@@ -18,7 +18,7 @@ def now_jkt():
 
 def catat_log_frame(merk, kode, status, keterangan, user):
     supabase = get_supabase()
-    supabase.table("log_frames").insert({
+    supabase.schema("optik").table("log_frames").insert({
         "timestamp_log": now_jkt().strftime("%Y-%m-%d %H:%M:%S"),
         "merk": merk,
         "kode": kode,
@@ -30,7 +30,7 @@ def catat_log_frame(merk, kode, status, keterangan, user):
 
 def catat_log_lensa(tipe, merk, jenis, sph, cyl, add_power, status, keterangan, user):
     supabase = get_supabase()
-    supabase.table("log_lensa").insert({
+    supabase.schema("optik").table("log_lensa").insert({
         "timestamp_log": now_jkt().strftime("%Y-%m-%d %H:%M:%S"),
         "tipe": tipe,
         "merk": merk,
@@ -154,7 +154,7 @@ def run():
                                 with col_save:
                                     if st.button("💾 Simpan", key=f"simpan_frame_{frame_id}"):
                                         supabase = get_supabase()
-                                        supabase.table("frames").update({
+                                        supabase.schema("optik").table("frames").update({
                                             "merk": merk_baru.strip(),
                                             "kode": kode_baru.strip(),
                                             "stock": stock_baru,
@@ -259,7 +259,7 @@ def run():
                                 with col_save:
                                     if st.button("💾 Simpan", key=f"simpan_retur_{frame_id}"):
                                         supabase = get_supabase()
-                                        supabase.table("frames").update({
+                                        supabase.schema("optik").table("frames").update({
                                             "stock": stock_baru
                                         }).eq("id", frame_id).execute()
 
@@ -347,7 +347,7 @@ def run():
                             with col_save:
                                 if st.button("💾 Simpan", key=f"simpan_lensa_{lensa_id}"):
                                     supabase = get_supabase()
-                                    supabase.table("lensa").update({
+                                    supabase.schema("optik").table("lensa").update({
                                         "stock": stock_baru,
                                         "harga_jual": harga_jual_baru
                                     }).eq("id", lensa_id).execute()

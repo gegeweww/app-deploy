@@ -26,7 +26,7 @@ def _insert_log(
         "%Y-%m-%d %H:%M:%S"
     )
 
-    supabase.table("log_frames").insert({
+    supabase.schema("optik").table("log_frames").insert({
         "timestamp_log": timestamp_str,
         "merk": merk,
         "kode": kode,

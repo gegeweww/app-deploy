@@ -109,7 +109,7 @@ def run():
         # ==============================
         # UPDATE STOCK DI SUPABASE
         # ==============================
-        query = supabase.table("lensa") \
+        query = supabase.schema("optik").table("lensa") \
             .update({"stock": stock_baru}) \
             .eq("jenis", selected_jenis) \
             .eq("tipe", selected_tipe) \
