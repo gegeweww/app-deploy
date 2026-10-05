@@ -3,13 +3,13 @@ import numpy as np
 from datetime import date, datetime, timedelta
 import streamlit as st
 from zoneinfo import ZoneInfo
-from supabase import create_client
+from supabase import create_client, ClientOptions
 
 @st.cache_resource
 def get_supabase():
     url = st.secrets["supabase"]["url"]
     key = st.secrets["supabase"]["service_role_key"]
-    return create_client(url, key)
+    return create_client(url, key, options=ClientOptions(schema="optik"))
 
 # Font
 def set_font():
