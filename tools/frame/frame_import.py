@@ -244,7 +244,7 @@ def update_frames(
         # ------------------------------------------
 
         response = (
-            supabase
+            supabase.schema("optik")
             .table("frames")
             .update(update_data)
             .eq("id", row["id"])
@@ -353,7 +353,7 @@ def update_frames(
         }
 
         response = (
-            supabase
+            supabase.schema("optik")
             .table("frames")
             .insert(new_data)
             .execute()
